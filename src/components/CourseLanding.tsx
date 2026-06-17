@@ -88,7 +88,7 @@ export default function CourseLanding({ course }: CourseLandingProps) {
           <div className="grid lg:grid-cols-2 gap-10 items-center">
             <div>
               {course.featured && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent-500 text-white text-xs font-bold mb-4">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-blue text-white text-xs font-bold mb-4">
                   <Star className="w-3 h-3 fill-white" />
                   CURSO DESTACADO
                 </span>
@@ -103,7 +103,7 @@ export default function CourseLanding({ course }: CourseLandingProps) {
                 <button
                   type="button"
                   onClick={scrollToRegistration}
-                  className="cta-pulse inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-accent-500 hover:bg-accent-600 text-white font-bold text-lg shadow-xl transition-all"
+                  className="cta-pulse inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-brand-blue hover:bg-brand-600 text-white font-bold text-lg shadow-xl transition-all"
                 >
                   Reserva tu lugar
                 </button>
@@ -124,7 +124,7 @@ export default function CourseLanding({ course }: CourseLandingProps) {
               )}
               <div className="pt-4 border-t border-white/20">
                 <p className="text-white/70 text-sm">Inversión</p>
-                <p className="text-4xl font-extrabold text-accent-300">
+                <p className="text-4xl font-extrabold text-brand-300">
                   ${course.price}{" "}
                   <span className="text-lg font-medium text-white/80">
                     {course.currency}
@@ -189,7 +189,7 @@ export default function CourseLanding({ course }: CourseLandingProps) {
 
             <div id="registro" className="lg:col-span-1">
               <div className="sticky top-24 bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
-                <div className="bg-brand-800 text-white px-6 py-5">
+                <div className="bg-brand-dark text-white px-6 py-5">
                   <h2 className="text-xl font-bold">Reserva tu lugar</h2>
                   <p className="text-brand-200 text-sm mt-1">
                     {step === "form" && "Completa tus datos para continuar"}
@@ -236,7 +236,7 @@ export default function CourseLanding({ course }: CourseLandingProps) {
                       />
                       <button
                         type="submit"
-                        className="w-full py-3.5 rounded-xl bg-accent-500 hover:bg-accent-600 text-white font-bold shadow-md transition-all cta-pulse"
+                        className="w-full py-3.5 rounded-xl bg-brand-blue hover:bg-brand-600 text-white font-bold shadow-md transition-all cta-pulse"
                       >
                         Continuar al pago →
                       </button>
@@ -317,7 +317,7 @@ export default function CourseLanding({ course }: CourseLandingProps) {
                       <button
                         type="button"
                         onClick={handleConfirmPayment}
-                        className="w-full py-3.5 rounded-xl border-2 border-accent-500 bg-accent-500 hover:bg-accent-600 text-white font-bold transition-all"
+                        className="w-full py-3.5 rounded-xl border-2 border-brand-blue bg-brand-blue hover:bg-brand-600 text-white font-bold transition-all"
                       >
                         Pago Confirmado
                       </button>
@@ -374,7 +374,7 @@ export default function CourseLanding({ course }: CourseLandingProps) {
           <button
             type="button"
             onClick={scrollToRegistration}
-            className="block w-full text-center py-3.5 rounded-xl bg-accent-500 text-white font-bold cta-pulse"
+            className="block w-full text-center py-3.5 rounded-xl bg-brand-blue text-white font-bold cta-pulse"
           >
             Reserva tu lugar — ${course.price}
           </button>
@@ -396,7 +396,7 @@ function FichaItem({
   return (
     <div className="flex items-start gap-3">
       <div className="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
-        <Icon className="w-4 h-4 text-accent-300" />
+        <Icon className="w-4 h-4 text-brand-300" />
       </div>
       <div>
         <p className="text-white/60 text-xs uppercase tracking-wider">{label}</p>

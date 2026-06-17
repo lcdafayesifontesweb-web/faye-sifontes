@@ -39,7 +39,7 @@ export default function FeaturedCourses({ courses }: FeaturedCoursesProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-12">
           <div>
-            <span className="inline-block text-sm font-semibold text-accent-600 uppercase tracking-wider mb-2">
+            <span className="inline-block text-sm font-semibold text-brand-blue uppercase tracking-wider mb-2">
               Próximas fechas
             </span>
             <h2 className="text-3xl sm:text-4xl font-bold text-slate-900">
@@ -117,7 +117,7 @@ function CourseCard({ course }: { course: HomeCourse }) {
         )}
         <div className="relative flex items-center justify-between">
           <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/20 backdrop-blur text-white text-xs font-semibold">
-            <Star className="w-3 h-3 fill-accent-400 text-accent-400" />
+            <Star className="w-3 h-3 fill-brand-blue text-brand-blue" />
             Destacado
           </span>
           <span className="text-white/90 text-sm font-bold">
@@ -171,7 +171,7 @@ function CourseCard({ course }: { course: HomeCourse }) {
 
         <Link
           href={`/curso/${course.slug}`}
-          className="inline-flex items-center gap-2 w-full justify-center px-6 py-3.5 rounded-xl bg-accent-500 hover:bg-accent-600 text-white font-semibold shadow-md hover:shadow-lg transition-all group-hover:scale-[1.02]"
+          className="inline-flex items-center gap-2 w-full justify-center px-6 py-3.5 rounded-xl bg-brand-blue hover:bg-brand-600 text-white font-semibold shadow-md hover:shadow-lg transition-all group-hover:scale-[1.02]"
         >
           Reserva tu lugar
           <ArrowRight className="w-4 h-4" />

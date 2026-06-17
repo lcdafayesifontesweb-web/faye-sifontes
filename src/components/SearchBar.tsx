@@ -44,7 +44,7 @@ export default function SearchBar() {
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => setFocused(true)}
           placeholder="Busca por nombre, área o palabra clave..."
-          className="w-full pl-12 pr-4 py-4 rounded-2xl border-2 border-white/30 bg-white/95 backdrop-blur text-slate-800 placeholder:text-slate-400 shadow-xl focus:outline-none focus:border-accent-400 focus:ring-4 focus:ring-accent-400/20 transition-all text-base"
+          className="w-full pl-12 pr-4 py-4 rounded-2xl border-2 border-white/30 bg-white/95 backdrop-blur text-brand-dark placeholder:text-brand-gray shadow-xl focus:outline-none focus:border-brand-blue focus:ring-4 focus:ring-brand-blue/20 transition-all text-base"
         />
         <div className="absolute inset-y-0 right-3 flex items-center">
           <span className="hidden sm:inline-flex items-center gap-1 px-3 py-1 rounded-full bg-brand-100 text-brand-700 text-xs font-medium">

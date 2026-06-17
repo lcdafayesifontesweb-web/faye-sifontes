@@ -1,19 +1,23 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-brand-50: #eff6ff;
-  --color-brand-100: #dbeafe;
-  --color-brand-200: #bfdbfe;
-  --color-brand-300: #93c5fd;
-  --color-brand-400: #60a5fa;
-  --color-brand-500: #3b82f6;
-  --color-brand-600: #2563eb;
-  --color-brand-700: #1d4ed8;
-  --color-brand-800: #1e40af;
-  --color-brand-900: #1e3a8a;
-  --color-accent-400: #fbbf24;
-  --color-accent-500: #f59e0b;
-  --color-accent-600: #d97706;
+  /* Paleta de marca — Lcda. Faye Sifontes */
+  --color-brand-blue: #0a56a6;
+  --color-brand-dark: #071b43;
+  --color-brand-gray: #b3b4b6;
+
+  /* Escala derivada para compatibilidad con clases existentes */
+  --color-brand-50: #e8f1fa;
+  --color-brand-100: #d1e3f5;
+  --color-brand-200: #a3c7eb;
+  --color-brand-300: #75abe1;
+  --color-brand-400: #3d82c4;
+  --color-brand-500: #0a56a6;
+  --color-brand-600: #094a8f;
+  --color-brand-700: #083e78;
+  --color-brand-800: #071b43;
+  --color-brand-900: #05122e;
+
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
@@ -23,6 +27,7 @@ html {
 
 body {
   font-family: var(--font-sans);
+  color: var(--color-brand-dark);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -44,13 +49,13 @@ body {
 
 @keyframes pulse-ring {
   0% {
-    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.5);
+    box-shadow: 0 0 0 0 rgba(10, 86, 166, 0.45);
   }
   70% {
-    box-shadow: 0 0 0 12px rgba(245, 158, 11, 0);
+    box-shadow: 0 0 0 12px rgba(10, 86, 166, 0);
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+    box-shadow: 0 0 0 0 rgba(10, 86, 166, 0);
   }
 }
 
