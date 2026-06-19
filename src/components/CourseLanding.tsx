@@ -196,7 +196,13 @@ export default function CourseLanding({ course }: CourseLandingProps) {
             </div>
 
             <div id="registro" className="lg:col-span-1">
-              <div className="sticky top-24 bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
+              <div className="sticky top-24 space-y-6">
+                <SmartChatbox
+                  courseSlug={course.slug}
+                  courseTitle={course.title}
+                />
+
+                <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
                 <div className="bg-brand-dark text-white px-6 py-5">
                   <h2 className="text-xl font-bold">Reserva tu lugar</h2>
                   <p className="text-brand-200 text-sm mt-1">
@@ -372,6 +378,7 @@ export default function CourseLanding({ course }: CourseLandingProps) {
                   )}
                 </div>
               </div>
+              </div>
             </div>
           </div>
         </div>
@@ -388,12 +395,6 @@ export default function CourseLanding({ course }: CourseLandingProps) {
           </button>
         </div>
       )}
-
-      <SmartChatbox
-        courseSlug={course.slug}
-        courseTitle={course.title}
-        elevated={step === "form"}
-      />
     </div>
   );
 }
