@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import type { CoursePageData } from "@/sanity/queries";
 import { BRAND } from "@/data/coursesData";
+import CertificationBadge from "./CertificationBadge";
 
 type PaymentStep = "form" | "payment" | "verifying" | "confirmed";
 
@@ -92,6 +93,14 @@ export default function CourseLanding({ course }: CourseLandingProps) {
                   <Star className="w-3 h-3 fill-white" />
                   CURSO DESTACADO
                 </span>
+              )}
+              {course.certifiedBy && (
+                <div className="mb-4">
+                  <CertificationBadge
+                    certifiedBy={course.certifiedBy}
+                    variant="light"
+                  />
+                </div>
               )}
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-tight mb-6">
                 {course.title}

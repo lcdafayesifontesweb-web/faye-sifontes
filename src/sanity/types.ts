@@ -28,6 +28,7 @@ export interface SanityCourse {
   price?: number;
   currency?: string;
   featured?: boolean;
+  certifiedBy?: string;
   coverImage?: SanityImage;
   instructor?: SanityInstructor;
 }

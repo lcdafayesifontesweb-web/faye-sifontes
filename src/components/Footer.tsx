@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { MapPin, Phone, Mail, Instagram, Award } from "lucide-react";
+import { MapPin, Phone, Mail, Instagram } from "lucide-react";
 import { BRAND } from "@/data/coursesData";
 
 export default function Footer() {
@@ -20,14 +20,9 @@ export default function Footer() {
             </Link>
             <p className="text-brand-gray text-sm mb-4">{BRAND.handle}</p>
             <p className="text-white/80 text-sm leading-relaxed">
-              Formación profesional premium para contadores, abogados y
-              empresarios. Impulsamos tu carrera con conocimiento práctico y
-              certificación oficial.
+              Formación profesional premium, servicios contables y espacios de
+              coworking para contadores, abogados y empresarios.
             </p>
-            <div className="flex items-center gap-2 mt-4 text-brand-blue">
-              <Award className="w-4 h-4" />
-              <span className="text-xs font-medium">{BRAND.alliance}</span>
-            </div>
           </div>
 
           <div>
@@ -86,6 +81,11 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/#servicios" className="text-white/70 hover:text-white transition-colors">
+                  Servicios corporativos
+                </Link>
+              </li>
+              <li>
                 <Link href="/#cursos" className="text-white/70 hover:text-white transition-colors">
                   Cursos destacados
                 </Link>
@@ -104,11 +104,10 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-12 pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-white/60">
+        <div className="mt-12 pt-8 border-t border-white/10 text-center text-sm text-white/60">
           <p>
             © 2026 Lcda. Faye Sifontes. SS Consultores. RIF V147895921
           </p>
-          <p className="text-brand-gray text-xs">{BRAND.alliance}</p>
         </div>
       </div>
     </footer>

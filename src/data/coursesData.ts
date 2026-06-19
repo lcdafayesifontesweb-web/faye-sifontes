@@ -36,6 +36,7 @@ export interface Course {
   imageGradient: string;
   tags: string[];
   spotsAvailable: number;
+  certifiedBy?: string;
 }
 
 export interface Category {
@@ -60,7 +61,6 @@ export const BRAND = {
   company: "SS Consultores",
   handle: "@ssconsultores.ve",
   director: "Lcda. Faye Carolina Sifontes Noriega",
-  alliance: "Certificados avalados por EDUCA ante el MPPE",
   address: "CC Centinela PB local 2. Puerto La Cruz, Anzoátegui, Venezuela.",
   phone: "0424-8979101",
   email: "sifontessifontesyasiocados@gmail.com",
@@ -172,12 +172,12 @@ export const courses: Course[] = [
       "Plantillas en Excel profesionales",
       "Gestión de incidencias petroleras",
       "Facilitadores expertos del sector",
-      "Certificado avalado por EDUCA / MPPE",
       "Material descargable post-curso",
     ],
     price: 85,
     currency: "USD",
     featured: true,
+    certifiedBy: "EDUCA",
     imageGradient: "from-blue-700 via-blue-800 to-indigo-900",
     tags: ["nómina", "petrolera", "excel", "incidencias", "taller"],
     spotsAvailable: 25,
@@ -201,11 +201,11 @@ export const courses: Course[] = [
       "Medios probatorios en litigios",
       "Contingencias legales empresariales",
       "Casos reales analizados en sala",
-      "Certificado avalado por EDUCA / MPPE",
     ],
     price: 95,
     currency: "USD",
     featured: true,
+    certifiedBy: "EDUCA",
     imageGradient: "from-indigo-700 via-indigo-800 to-slate-900",
     tags: ["derecho", "laboral", "procesal", "litigios", "abogado"],
     spotsAvailable: 30,

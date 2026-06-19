@@ -122,6 +122,20 @@ export const course = defineType({
         ],
       },
     }),
+    defineField({
+      name: "certifiedBy",
+      title: "Certificado por:",
+      type: "string",
+      description: "Institución que avala el certificado del curso (opcional)",
+      options: {
+        list: [
+          { title: "EDUCA", value: "EDUCA" },
+          { title: "Lcda. Faye Sifontes", value: "Lcda. Faye Sifontes" },
+          { title: "Otra institución", value: "Otra institución" },
+        ],
+        layout: "dropdown",
+      },
+    }),
   ],
   preview: {
     select: {

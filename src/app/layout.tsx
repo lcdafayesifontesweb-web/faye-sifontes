@@ -10,7 +10,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "SS Consultores | Formación Profesional Premium",
   description:
-    "Plataforma educativa de SS Consultores. Cursos presenciales y online en contabilidad, tributos, derecho laboral y más. Certificados avalados por EDUCA ante el MPPE.",
+    "Plataforma educativa de SS Consultores. Cursos presenciales y online, servicios contables y coworking en Puerto La Cruz, Anzoátegui.",
   keywords: [
     "SS Consultores",
     "cursos",

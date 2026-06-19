@@ -1,5 +1,6 @@
 import HeroSection from "@/components/HeroSection";
 import CategoriesSection from "@/components/CategoriesSection";
+import ServicesSection from "@/components/ServicesSection";
 import FeaturedCourses from "@/components/FeaturedCourses";
 import InstructorsSection from "@/components/InstructorsSection";
 import SocialProofSection from "@/components/SocialProofSection";
@@ -20,6 +21,7 @@ export default async function HomePage() {
     <>
       <HeroSection />
       <CategoriesSection />
+      <ServicesSection />
       <FeaturedCourses courses={featuredCourses} />
       <InstructorsSection instructors={instructors} />
       <SocialProofSection />

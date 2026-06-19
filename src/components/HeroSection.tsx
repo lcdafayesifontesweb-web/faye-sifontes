@@ -1,10 +1,10 @@
-import { Award, Users, BookOpen } from "lucide-react";
+import { Users, BookOpen, MapPin } from "lucide-react";
 import SearchBar from "./SearchBar";
 
 const stats = [
   { icon: BookOpen, value: "6+", label: "Cursos activos" },
   { icon: Users, value: "500+", label: "Profesionales formados" },
-  { icon: Award, value: "EDUCA", label: "Aval MPPE" },
+  { icon: MapPin, value: "PLC", label: "Puerto La Cruz" },
 ];
 
 export default function HeroSection() {
@@ -17,11 +17,6 @@ export default function HeroSection() {
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28">
         <div className="text-center max-w-4xl mx-auto mb-10 animate-fade-in-up">
-          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-sm font-medium text-white/80 mb-6">
-            <Award className="w-4 h-4 text-brand-blue" />
-            Certificados avalados por EDUCA ante el MPPE
-          </span>
-
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight mb-6">
             Formación profesional que{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-300 to-brand-blue">

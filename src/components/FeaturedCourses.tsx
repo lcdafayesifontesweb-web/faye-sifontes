@@ -13,6 +13,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import type { HomeCourse } from "@/sanity/queries";
+import CertificationBadge from "./CertificationBadge";
 
 interface FeaturedCoursesProps {
   courses: HomeCourse[];
@@ -150,12 +151,18 @@ function CourseCard({ course }: { course: HomeCourse }) {
         </ul>
 
         {course.instructorName && (
-          <p className="text-xs text-slate-500 mb-5">
+          <p className="text-xs text-slate-500 mb-3">
             Facilitador:{" "}
             <span className="font-semibold text-slate-700">
               {course.instructorName}
             </span>
           </p>
+        )}
+
+        {course.certifiedBy && (
+          <div className="mb-5">
+            <CertificationBadge certifiedBy={course.certifiedBy} variant="card" />
+          </div>
         )}
 
         <div className="flex flex-wrap gap-2 mb-6">

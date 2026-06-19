@@ -23,6 +23,7 @@ export const FEATURED_COURSES_QUERY = `*[_type == "course" && featured == true] 
   price,
   currency,
   featured,
+  certifiedBy,
   coverImage,
   instructor->{
     _id,
@@ -54,6 +55,7 @@ export const COURSE_BY_SLUG_QUERY = `*[_type == "course" && slug.current == $slu
   price,
   currency,
   featured,
+  certifiedBy,
   coverImage,
   instructor->{
     _id,
@@ -94,6 +96,7 @@ export interface HomeCourse {
   imageGradient: string;
   coverImageUrl?: string;
   instructorName?: string;
+  certifiedBy?: string;
 }
 
 export interface HomeInstructor {
@@ -132,6 +135,7 @@ export interface CoursePageData {
   imageGradient: string;
   coverImageUrl?: string;
   instructor?: CoursePageInstructor;
+  certifiedBy?: string;
 }
 
 const AVATAR_COLORS = [
@@ -170,6 +174,7 @@ function mapSanityCourse(course: SanityCourse): HomeCourse {
       ? urlFor(course.coverImage).width(800).height(400).url()
       : undefined,
     instructorName: course.instructor?.name,
+    certifiedBy: course.certifiedBy,
   };
 }
 
@@ -204,6 +209,7 @@ function mapStaticCourses(): HomeCourse[] {
     currency: c.currency,
     imageGradient: c.imageGradient,
     instructorName: staticInstructors.find((i) => i.id === c.instructorId)?.name,
+    certifiedBy: c.certifiedBy,
   }));
 }
 
@@ -279,6 +285,7 @@ function mapSanityCoursePage(course: SanityCourse): CoursePageData {
           avatarColor: instructor.avatarColor,
         }
       : undefined,
+    certifiedBy: course.certifiedBy,
   };
 }
 
@@ -312,6 +319,7 @@ function mapStaticCoursePage(slug: string): CoursePageData | null {
           avatarColor: instructor.avatarColor,
         }
       : undefined,
+    certifiedBy: course.certifiedBy,
   };
 }
 
