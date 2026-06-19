@@ -30,5 +30,6 @@ export interface SanityCourse {
   featured?: boolean;
   certifiedBy?: string;
   coverImage?: SanityImage;
+  gallery?: SanityImage[];
   instructor?: SanityInstructor;
 }

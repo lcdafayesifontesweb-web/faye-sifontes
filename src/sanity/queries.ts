@@ -49,6 +49,10 @@ export const COURSE_BY_SLUG_QUERY = `*[_type == "course" && slug.current == $slu
   featured,
   certifiedBy,
   coverImage,
+  gallery[]{
+    ...,
+    alt
+  },
   instructor->{
     _id,
     name,
@@ -144,6 +148,7 @@ export interface CoursePageData {
   featured: boolean;
   imageGradient: string;
   coverImageUrl?: string;
+  gallery: { url: string; alt: string }[];
   instructor?: CoursePageInstructor;
   certifiedBy?: string;
 }
@@ -206,6 +211,19 @@ function mapSanityInstructor(
   };
 }
 
+function mapGalleryImages(
+  gallery: SanityCourse["gallery"],
+  courseTitle: string
+): { url: string; alt: string }[] {
+  if (!gallery?.length) return [];
+  return gallery
+    .filter((img) => img?.asset?._ref)
+    .map((img, index) => ({
+      url: urlFor(img).width(800).height(600).url(),
+      alt: img.alt ?? `${courseTitle} — foto ${index + 1}`,
+    }));
+}
+
 function mapSanityCoursePage(course: SanityCourse): CoursePageData {
   const instructor = course.instructor
     ? mapSanityInstructor(course.instructor, 0)
@@ -229,6 +247,7 @@ function mapSanityCoursePage(course: SanityCourse): CoursePageData {
     coverImageUrl: course.coverImage
       ? urlFor(course.coverImage).width(1200).height(600).url()
       : undefined,
+    gallery: mapGalleryImages(course.gallery, course.title),
     instructor: instructor
       ? {
           id: instructor.id,

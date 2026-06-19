@@ -98,6 +98,24 @@ export const course = defineType({
       ],
     }),
     defineField({
+      name: "gallery",
+      title: "Galería de Fotos del Curso",
+      type: "array",
+      of: [
+        defineArrayMember({
+          type: "image",
+          options: { hotspot: true },
+          fields: [
+            defineField({
+              name: "alt",
+              title: "Texto alternativo",
+              type: "string",
+            }),
+          ],
+        }),
+      ],
+    }),
+    defineField({
       name: "featured",
       title: "Curso destacado",
       type: "boolean",

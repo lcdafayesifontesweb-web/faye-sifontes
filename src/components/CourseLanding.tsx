@@ -20,6 +20,8 @@ import {
 import type { CoursePageData } from "@/sanity/queries";
 import { BRAND } from "@/data/coursesData";
 import CertificationBadge from "./CertificationBadge";
+import CourseGallery from "./CourseGallery";
+import SmartChatbox from "./SmartChatbox";
 
 type PaymentStep = "form" | "payment" | "verifying" | "confirmed";
 
@@ -139,6 +141,8 @@ export default function CourseLanding({ course }: CourseLandingProps) {
           </div>
         </div>
       </section>
+
+      <CourseGallery images={course.gallery} courseTitle={course.title} />
 
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -384,6 +388,12 @@ export default function CourseLanding({ course }: CourseLandingProps) {
           </button>
         </div>
       )}
+
+      <SmartChatbox
+        courseSlug={course.slug}
+        courseTitle={course.title}
+        elevated={step === "form"}
+      />
     </div>
   );
 }
