@@ -10,12 +10,13 @@ const stats = [
 export default function HeroSection() {
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-brand-dark via-brand-700 to-brand-dark text-white">
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-white rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-        <div className="absolute bottom-0 left-0 w-80 h-80 bg-brand-blue rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
-      </div>
+      {/* Textura de fondo — overlay 10% */}
+      <div
+        className="absolute inset-0 z-0 bg-cover bg-center opacity-10 bg-[url('/bg-home.jpg')]"
+        aria-hidden="true"
+      />
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28">
         <div className="text-center max-w-4xl mx-auto mb-10 animate-fade-in-up">
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight mb-6">
             Formación profesional que{" "}

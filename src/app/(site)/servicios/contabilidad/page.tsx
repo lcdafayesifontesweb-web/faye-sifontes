@@ -86,10 +86,12 @@ export default function ContabilidadPage() {
     <>
       {/* Hero */}
       <section className="relative bg-gradient-to-br from-brand-dark via-brand-800 to-brand-dark text-white overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-brand-blue rounded-full blur-3xl" />
-        </div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
+        {/* Textura de fondo — overlay 10% */}
+        <div
+          className="absolute inset-0 z-0 bg-cover bg-center opacity-10 bg-[url('/bg-contabilidad.jpg')]"
+          aria-hidden="true"
+        />
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
           <Link
             href="/#servicios"
             className="inline-flex items-center gap-2 text-white/70 hover:text-white text-sm mb-8 transition-colors"

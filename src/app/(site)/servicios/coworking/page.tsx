@@ -63,10 +63,12 @@ export default function CoworkingPage() {
     <>
       {/* Hero */}
       <section className="relative bg-gradient-to-br from-brand-blue via-brand-600 to-brand-dark text-white overflow-hidden min-h-[420px] flex items-center">
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-brand-dark to-transparent" />
-        </div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24 w-full">
+        {/* Textura de fondo — overlay 10% */}
+        <div
+          className="absolute inset-0 z-0 bg-cover bg-center opacity-10 bg-[url('/bg-coworking.jpg')]"
+          aria-hidden="true"
+        />
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24 w-full">
           <Link
             href="/#servicios"
             className="inline-flex items-center gap-2 text-white/70 hover:text-white text-sm mb-8 transition-colors"
