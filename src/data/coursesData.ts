@@ -29,7 +29,7 @@ export const BRAND = {
   director: "Lcda. Faye Carolina Sifontes Noriega",
   address: "CC Centinela PB local 2. Puerto La Cruz, Anzoátegui, Venezuela.",
   phone: "0424-8979101",
-  email: "sifontessifontesyasiocados@gmail.com",
+  email: "sifontessifontesyasociados@gmail.com",
   pagoMovil: {
     banco: "Banesco",
     telefono: "0424-8979101",
