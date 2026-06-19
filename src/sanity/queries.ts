@@ -1,16 +1,8 @@
 import { client } from "./client";
 import { urlFor } from "./image";
 import type { SanityCourse, SanityInstructor } from "./types";
-import { isSanityConfigured } from "../../sanity/env";
-import {
-  courses as staticCourses,
-  instructors as staticInstructors,
-  getFeaturedCourses,
-  getCourseById,
-  getInstructorById,
-} from "@/data/coursesData";
 
-export const FEATURED_COURSES_QUERY = `*[_type == "course" && featured == true] | order(_createdAt desc) {
+export const ALL_COURSES_QUERY = `*[_type == "course"] | order(_createdAt desc) {
   _id,
   title,
   "slug": slug.current,
@@ -68,6 +60,17 @@ export const COURSE_BY_SLUG_QUERY = `*[_type == "course" && slug.current == $slu
 
 export const ALL_COURSE_SLUGS_QUERY = `*[_type == "course" && defined(slug.current)].slug.current`;
 
+export const SEARCH_COURSES_QUERY = `*[_type == "course" && (
+  title match $pattern ||
+  description match $pattern ||
+  category match $pattern
+)] | order(_createdAt desc) [0...8] {
+  _id,
+  title,
+  "slug": slug.current,
+  date
+}`;
+
 const MODALITY_LABELS: Record<string, string> = {
   presencial: "Presencial",
   zoom: "En vivo por Zoom",
@@ -93,10 +96,18 @@ export interface HomeCourse {
   features: string[];
   price: number;
   currency: string;
+  featured: boolean;
   imageGradient: string;
   coverImageUrl?: string;
   instructorName?: string;
   certifiedBy?: string;
+}
+
+export interface SearchCourseItem {
+  id: string;
+  slug: string;
+  title: string;
+  date: string;
 }
 
 export interface HomeInstructor {
@@ -131,7 +142,6 @@ export interface CoursePageData {
   price: number;
   currency: string;
   featured: boolean;
-  spotsAvailable: number;
   imageGradient: string;
   coverImageUrl?: string;
   instructor?: CoursePageInstructor;
@@ -167,6 +177,7 @@ function mapSanityCourse(course: SanityCourse): HomeCourse {
     features: course.features ?? [],
     price: course.price ?? 0,
     currency: course.currency ?? "USD",
+    featured: course.featured ?? false,
     imageGradient:
       CATEGORY_GRADIENTS[course.category] ??
       "from-brand-700 via-brand-800 to-brand-900",
@@ -195,61 +206,6 @@ function mapSanityInstructor(
   };
 }
 
-function mapStaticCourses(): HomeCourse[] {
-  return getFeaturedCourses().map((c) => ({
-    id: c.id,
-    slug: c.slug,
-    title: c.title,
-    shortDescription: c.shortDescription,
-    date: c.date,
-    schedule: c.schedule,
-    modalityLabel: c.modalityLabel,
-    features: c.features,
-    price: c.price,
-    currency: c.currency,
-    imageGradient: c.imageGradient,
-    instructorName: staticInstructors.find((i) => i.id === c.instructorId)?.name,
-    certifiedBy: c.certifiedBy,
-  }));
-}
-
-function mapStaticInstructors(): HomeInstructor[] {
-  return staticInstructors.map((i) => ({
-    id: i.id,
-    name: i.name,
-    role: i.title,
-    bio: i.bio,
-    avatarInitials: i.avatarInitials,
-    avatarColor: i.avatarColor,
-  }));
-}
-
-export async function getFeaturedCoursesForHome(): Promise<HomeCourse[]> {
-  if (!isSanityConfigured()) {
-    return mapStaticCourses();
-  }
-  try {
-    const courses = await client.fetch<SanityCourse[]>(FEATURED_COURSES_QUERY);
-    if (courses.length === 0) return mapStaticCourses();
-    return courses.map(mapSanityCourse);
-  } catch {
-    return mapStaticCourses();
-  }
-}
-
-export async function getInstructorsForHome(): Promise<HomeInstructor[]> {
-  if (!isSanityConfigured()) {
-    return mapStaticInstructors();
-  }
-  try {
-    const instructors = await client.fetch<SanityInstructor[]>(INSTRUCTORS_QUERY);
-    if (instructors.length === 0) return mapStaticInstructors();
-    return instructors.map(mapSanityInstructor);
-  } catch {
-    return mapStaticInstructors();
-  }
-}
-
 function mapSanityCoursePage(course: SanityCourse): CoursePageData {
   const instructor = course.instructor
     ? mapSanityInstructor(course.instructor, 0)
@@ -267,7 +223,6 @@ function mapSanityCoursePage(course: SanityCourse): CoursePageData {
     price: course.price ?? 0,
     currency: course.currency ?? "USD",
     featured: course.featured ?? false,
-    spotsAvailable: 25,
     imageGradient:
       CATEGORY_GRADIENTS[course.category] ??
       "from-brand-700 via-brand-800 to-brand-900",
@@ -289,66 +244,44 @@ function mapSanityCoursePage(course: SanityCourse): CoursePageData {
   };
 }
 
-function mapStaticCoursePage(slug: string): CoursePageData | null {
-  const course = getCourseById(slug);
-  if (!course) return null;
-
-  const instructor = getInstructorById(course.instructorId);
-
-  return {
-    id: course.id,
-    slug: course.slug,
-    title: course.title,
-    description: course.fullDescription,
-    date: course.date,
-    schedule: course.schedule,
-    modalityLabel: course.modalityLabel,
-    features: course.features,
-    price: course.price,
-    currency: course.currency,
-    featured: course.featured,
-    spotsAvailable: course.spotsAvailable,
-    imageGradient: course.imageGradient,
-    instructor: instructor
-      ? {
-          id: instructor.id,
-          name: instructor.name,
-          role: instructor.title,
-          bio: instructor.bio,
-          avatarInitials: instructor.avatarInitials,
-          avatarColor: instructor.avatarColor,
-        }
-      : undefined,
-    certifiedBy: course.certifiedBy,
-  };
+export async function getAllCoursesForHome(): Promise<HomeCourse[]> {
+  const courses = await client.fetch<SanityCourse[]>(ALL_COURSES_QUERY);
+  return courses.map(mapSanityCourse);
 }
 
-export async function getCourseBySlug(slug: string): Promise<CoursePageData | null> {
-  if (!isSanityConfigured()) {
-    return mapStaticCoursePage(slug);
-  }
-  try {
-    const course = await client.fetch<SanityCourse | null>(COURSE_BY_SLUG_QUERY, {
-      slug,
-    });
-    if (!course) return mapStaticCoursePage(slug);
-    return mapSanityCoursePage(course);
-  } catch {
-    return mapStaticCoursePage(slug);
-  }
+export async function getInstructorsForHome(): Promise<HomeInstructor[]> {
+  const instructors = await client.fetch<SanityInstructor[]>(INSTRUCTORS_QUERY);
+  return instructors.map(mapSanityInstructor);
+}
+
+export async function getCourseBySlug(
+  slug: string
+): Promise<CoursePageData | null> {
+  const course = await client.fetch<SanityCourse | null>(COURSE_BY_SLUG_QUERY, {
+    slug,
+  });
+  if (!course) return null;
+  return mapSanityCoursePage(course);
 }
 
 export async function getAllCourseSlugs(): Promise<string[]> {
-  if (!isSanityConfigured()) {
-    return staticCourses.map((c) => c.slug);
-  }
-  try {
-    const slugs = await client.fetch<string[]>(ALL_COURSE_SLUGS_QUERY);
-    if (slugs.length === 0) {
-      return staticCourses.map((c) => c.slug);
-    }
-    return slugs;
-  } catch {
-    return staticCourses.map((c) => c.slug);
-  }
+  return client.fetch<string[]>(ALL_COURSE_SLUGS_QUERY);
+}
+
+export async function searchCoursesFromSanity(
+  query: string
+): Promise<SearchCourseItem[]> {
+  const q = query.trim();
+  if (q.length < 2) return [];
+
+  const results = await client.fetch<
+    { _id: string; slug: string; title: string; date: string }[]
+  >(SEARCH_COURSES_QUERY, { pattern: `*${q}*` });
+
+  return results.map((c) => ({
+    id: c._id,
+    slug: c.slug,
+    title: c.title,
+    date: c.date,
+  }));
 }

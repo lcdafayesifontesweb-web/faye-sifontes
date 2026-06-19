@@ -9,6 +9,8 @@ interface PageProps {
 
 export const revalidate = 60;
 
+export const dynamicParams = true;
+
 export async function generateStaticParams() {
   const slugs = await getAllCourseSlugs();
   return slugs.map((slug) => ({ slug }));

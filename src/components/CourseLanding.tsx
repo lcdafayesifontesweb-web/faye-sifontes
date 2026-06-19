@@ -16,7 +16,6 @@ import {
   MessageCircle,
   ArrowLeft,
   Star,
-  Users,
 } from "lucide-react";
 import type { CoursePageData } from "@/sanity/queries";
 import { BRAND } from "@/data/coursesData";
@@ -116,10 +115,6 @@ export default function CourseLanding({ course }: CourseLandingProps) {
                 >
                   Reserva tu lugar
                 </button>
-                <div className="flex items-center gap-2 text-white/80 text-sm">
-                  <Users className="w-4 h-4" />
-                  Solo {course.spotsAvailable} cupos disponibles
-                </div>
               </div>
             </div>
 

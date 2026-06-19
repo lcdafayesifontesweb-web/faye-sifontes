@@ -3,22 +3,34 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { Search, Sparkles, ArrowRight } from "lucide-react";
-import { searchCourses } from "@/data/coursesData";
-import type { Course } from "@/data/coursesData";
+import type { SearchCourseItem } from "@/sanity/queries";
 
-export default function SearchBar() {
+interface SearchBarProps {
+  courses: SearchCourseItem[];
+}
+
+export default function SearchBar({ courses }: SearchBarProps) {
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<Course[]>([]);
+  const [results, setResults] = useState<SearchCourseItem[]>([]);
   const [focused, setFocused] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (query.length >= 2) {
-      setResults(searchCourses(query).slice(0, 5));
+      const q = query.toLowerCase().trim();
+      setResults(
+        courses
+          .filter(
+            (c) =>
+              c.title.toLowerCase().includes(q) ||
+              c.date.toLowerCase().includes(q)
+          )
+          .slice(0, 5)
+      );
     } else {
       setResults([]);
     }
-  }, [query]);
+  }, [query, courses]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {

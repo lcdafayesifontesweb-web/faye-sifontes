@@ -26,7 +26,7 @@ export default function FeaturedCourses({ courses }: FeaturedCoursesProps) {
     return (
       <section id="cursos" className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 text-center text-slate-500">
-          No hay cursos destacados disponibles en este momento.
+          No hay cursos publicados en este momento. Vuelve pronto.
         </div>
       </section>
     );
@@ -44,7 +44,7 @@ export default function FeaturedCourses({ courses }: FeaturedCoursesProps) {
               Próximas fechas
             </span>
             <h2 className="text-3xl sm:text-4xl font-bold text-slate-900">
-              Cursos Destacados
+              Nuestros Cursos
             </h2>
           </div>
           {courses.length > 1 && (
@@ -117,10 +117,14 @@ function CourseCard({ course }: { course: HomeCourse }) {
           />
         )}
         <div className="relative flex items-center justify-between">
-          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/20 backdrop-blur text-white text-xs font-semibold">
-            <Star className="w-3 h-3 fill-brand-blue text-brand-blue" />
-            Destacado
-          </span>
+          {course.featured ? (
+            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/20 backdrop-blur text-white text-xs font-semibold">
+              <Star className="w-3 h-3 fill-brand-blue text-brand-blue" />
+              Destacado
+            </span>
+          ) : (
+            <span />
+          )}
           <span className="text-white/90 text-sm font-bold">
             ${course.price} {course.currency}
           </span>
