@@ -1,15 +1,14 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import {
   BookOpen,
   BarChart3,
   FileText,
   ShieldCheck,
   Landmark,
-  ArrowLeft,
 } from "lucide-react";
 import Accordion from "@/components/services/Accordion";
 import ServiceCta from "@/components/services/ServiceCta";
+import Breadcrumbs from "@/components/Breadcrumbs";
 
 export const metadata: Metadata = {
   title: "Asesoría y Gestión Contable en Venezuela | SS Consultores",
@@ -84,6 +83,16 @@ const accordionItems = [
 export default function ContabilidadPage() {
   return (
     <>
+      <div className="bg-white border-b border-brand-gray/20">
+        <Breadcrumbs
+          items={[
+            { label: "Inicio", href: "/" },
+            { label: "Servicios", href: "/#servicios" },
+            { label: "Asesoría Contable" },
+          ]}
+        />
+      </div>
+
       {/* Hero */}
       <section className="relative bg-gradient-to-br from-brand-dark via-brand-800 to-brand-dark text-white overflow-hidden">
         {/* Textura de fondo — overlay 10% */}
@@ -92,13 +101,6 @@ export default function ContabilidadPage() {
           aria-hidden="true"
         />
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
-          <Link
-            href="/#servicios"
-            className="inline-flex items-center gap-2 text-white/70 hover:text-white text-sm mb-8 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Volver a servicios
-          </Link>
           <div className="max-w-3xl">
             <span className="inline-block text-sm font-semibold text-brand-blue uppercase tracking-wider mb-4">
               Servicios Corporativos

@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import Image from "next/image";
 import {
   Wifi,
@@ -7,9 +6,9 @@ import {
   Users,
   Tv,
   Video,
-  ArrowLeft,
 } from "lucide-react";
 import ServiceCta from "@/components/services/ServiceCta";
+import Breadcrumbs from "@/components/Breadcrumbs";
 
 export const metadata: Metadata = {
   title: "Alquiler de Salas Tecnológicas y Coworking en Puerto La Cruz",
@@ -61,6 +60,16 @@ const galleryImages = [
 export default function CoworkingPage() {
   return (
     <>
+      <div className="bg-white border-b border-brand-gray/20">
+        <Breadcrumbs
+          items={[
+            { label: "Inicio", href: "/" },
+            { label: "Servicios", href: "/#servicios" },
+            { label: "Alquiler de Coworking" },
+          ]}
+        />
+      </div>
+
       {/* Hero */}
       <section className="relative bg-gradient-to-br from-brand-blue via-brand-600 to-brand-dark text-white overflow-hidden min-h-[420px] flex items-center">
         {/* Textura de fondo — overlay 10% */}
@@ -69,13 +78,6 @@ export default function CoworkingPage() {
           aria-hidden="true"
         />
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24 w-full">
-          <Link
-            href="/#servicios"
-            className="inline-flex items-center gap-2 text-white/70 hover:text-white text-sm mb-8 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Volver a servicios
-          </Link>
           <div className="max-w-3xl">
             <span className="inline-block text-sm font-semibold text-white/80 uppercase tracking-wider mb-4">
               Puerto La Cruz, Anzoátegui
@@ -140,7 +142,7 @@ export default function CoworkingPage() {
             {galleryImages.map(({ src, alt, span }, index) => (
               <div
                 key={src}
-                className={`relative rounded-2xl overflow-hidden bg-brand-dark/5 min-h-[220px] ${span} ${
+                className={`group relative rounded-xl overflow-hidden bg-brand-dark/5 min-h-[220px] transition-transform duration-300 ease-in-out hover:scale-105 hover:shadow-xl hover:z-10 ${span} ${
                   index === 0 ? "lg:min-h-0" : ""
                 }`}
               >
@@ -148,10 +150,10 @@ export default function CoworkingPage() {
                   src={src}
                   alt={alt}
                   fill
-                  className="object-cover hover:scale-105 transition-transform duration-500"
+                  className="object-cover transition-transform duration-300 ease-in-out group-hover:scale-105"
                   sizes="(max-width: 1024px) 100vw, 33vw"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-brand-dark/40 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-brand-dark/40 to-transparent pointer-events-none" />
               </div>
             ))}
           </div>

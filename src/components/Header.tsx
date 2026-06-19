@@ -39,19 +39,26 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-brand-gray/30 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 lg:h-20">
+        <div className="flex items-center justify-between h-20 lg:h-24">
           <Link href="/" className="flex items-center group shrink-0">
             <Image
               src="/logo-sifontes.jpg"
               alt="Lcda. Faye Sifontes — SS Consultores"
-              width={150}
-              height={48}
-              className="h-10 sm:h-12 w-auto object-contain"
+              width={240}
+              height={77}
+              className="h-16 sm:h-20 w-auto object-contain"
               priority
             />
           </Link>
 
           <nav className="hidden md:flex items-center gap-6 lg:gap-8">
+            <Link
+              href="/"
+              className="text-sm font-medium text-brand-dark/70 hover:text-brand-blue transition-colors"
+            >
+              Inicio
+            </Link>
+
             <Link
               href="/#categorias"
               className="text-sm font-medium text-brand-dark/70 hover:text-brand-blue transition-colors"
@@ -138,6 +145,14 @@ export default function Header() {
 
         {open && (
           <nav className="md:hidden pb-4 flex flex-col gap-1">
+            <Link
+              href="/"
+              className="px-3 py-2 rounded-lg text-brand-dark/70 hover:bg-brand-50 hover:text-brand-blue font-medium"
+              onClick={() => setOpen(false)}
+            >
+              Inicio
+            </Link>
+
             <Link
               href="/#categorias"
               className="px-3 py-2 rounded-lg text-brand-dark/70 hover:bg-brand-50 hover:text-brand-blue font-medium"

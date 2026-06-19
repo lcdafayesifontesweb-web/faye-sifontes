@@ -19,6 +19,10 @@ export const metadata: Metadata = {
     "derecho laboral",
     "Puerto La Cruz",
   ],
+  icons: {
+    icon: "/logo-sifontes.jpg",
+    apple: "/logo-sifontes.jpg",
+  },
 };
 
 export default function RootLayout({
