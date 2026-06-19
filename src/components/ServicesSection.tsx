@@ -9,7 +9,6 @@ import {
   Users,
   ArrowRight,
 } from "lucide-react";
-import { getWhatsAppUrl } from "@/lib/whatsapp";
 
 const accountingFeatures = [
   "NIIF PYME y declaraciones fiscales",
@@ -27,13 +26,6 @@ const coworkingFeatures = [
 ];
 
 export default function ServicesSection() {
-  const presupuestoUrl = getWhatsAppUrl(
-    "Hola, me interesa solicitar un presupuesto para el servicio de Asesoría y Gestión Contable Integral."
-  );
-  const reservaUrl = getWhatsAppUrl(
-    "Hola, me gustaría reservar un espacio de Coworking o Sala Tecnológica en Puerto La Cruz."
-  );
-
   return (
     <section id="servicios" className="py-20 bg-slate-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -87,12 +79,10 @@ export default function ServicesSection() {
               </ul>
 
               <Link
-                href={presupuestoUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/servicios/contabilidad"
                 className="mt-auto inline-flex items-center justify-center gap-2 w-full px-6 py-3.5 rounded-xl border-2 border-brand-blue text-brand-blue hover:bg-brand-blue hover:text-white font-semibold transition-all group-hover:scale-[1.01]"
               >
-                Solicitar Presupuesto
+                Ver más detalles
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
@@ -135,12 +125,10 @@ export default function ServicesSection() {
               </ul>
 
               <Link
-                href={reservaUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/servicios/coworking"
                 className="mt-auto inline-flex items-center justify-center gap-2 w-full px-6 py-3.5 rounded-xl border-2 border-brand-blue text-brand-blue hover:bg-brand-blue hover:text-white font-semibold transition-all group-hover:scale-[1.01]"
               >
-                Reservar Espacio
+                Ver más detalles
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>

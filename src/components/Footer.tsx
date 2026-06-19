@@ -81,8 +81,18 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/servicios/contabilidad" className="text-white/70 hover:text-white transition-colors">
+                  Asesoría Contable
+                </Link>
+              </li>
+              <li>
+                <Link href="/servicios/coworking" className="text-white/70 hover:text-white transition-colors">
+                  Salas de Coworking
+                </Link>
+              </li>
+              <li>
                 <Link href="/#servicios" className="text-white/70 hover:text-white transition-colors">
-                  Servicios corporativos
+                  Todos los servicios
                 </Link>
               </li>
               <li>
