@@ -1,4 +1,5 @@
 import HeroSection from "@/components/HeroSection";
+import DirectorBioSection from "@/components/DirectorBioSection";
 import CategoriesSection from "@/components/CategoriesSection";
 import ServicesSection from "@/components/ServicesSection";
 import FeaturedCourses from "@/components/FeaturedCourses";
@@ -26,6 +27,7 @@ export default async function HomePage() {
 
   return (
     <>
+      <DirectorBioSection />
       <HeroSection courseCount={courses.length} searchCourses={searchCourses} />
       <CategoriesSection />
       <ServicesSection />
