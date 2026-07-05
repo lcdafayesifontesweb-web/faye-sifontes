@@ -56,7 +56,7 @@ export const categories: Category[] = [
   },
   {
     id: "marco-legal-laboral",
-    name: "Marco Legal y Laboral",
+    name: "Marco y derecho laboral",
     description: "Derecho laboral, procesal y contingencias legales empresariales.",
     icon: "Scale",
     courseCount: 0,

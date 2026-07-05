@@ -3,7 +3,7 @@ import { defineArrayMember, defineField, defineType } from "sanity";
 const CATEGORIES = [
   { title: "Contabilidad y Tributos", value: "contabilidad-tributos" },
   { title: "Administración y Costos", value: "administracion-costos" },
-  { title: "Marco Legal y Laboral", value: "marco-legal-laboral" },
+  { title: "Marco y derecho laboral", value: "marco-legal-laboral" },
   {
     title: "Desarrollo Personal y Liderazgo",
     value: "desarrollo-personal-liderazgo",

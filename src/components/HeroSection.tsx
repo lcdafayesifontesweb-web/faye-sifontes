@@ -39,7 +39,7 @@ export default function HeroSection({
 
           <p className="text-lg sm:text-xl text-white/80 max-w-2xl mx-auto leading-relaxed">
             Cursos presenciales y online en contabilidad, tributos, derecho laboral
-            y liderazgo. Aprende con expertos del sector petrolero y legal venezolano.
+            y liderazgo. Aprende con expertos del sector administrativo, tributario, petrolero y legal.
           </p>
         </div>
 
