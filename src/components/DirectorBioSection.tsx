@@ -44,21 +44,23 @@ export default function DirectorBioSection() {
           </div>
         </div>
 
-        <div className="lg:col-span-5 order-1 lg:order-2 flex justify-center lg:justify-end">
-          <div className="relative w-full max-w-sm lg:max-w-none">
-            <div
-              className="absolute -inset-3 rounded-2xl bg-brand-blue/10 translate-x-3 translate-y-3"
-              aria-hidden="true"
-            />
-            <div className="relative aspect-[4/5] w-full max-w-[340px] mx-auto lg:max-w-none rounded-2xl overflow-hidden shadow-xl ring-1 ring-brand-gray/20">
-              <Image
-                src="/Faye Sifontes.jpeg"
-                alt="Lcda. Faye Sifontes Noriega — Contador Público Independiente"
-                fill
-                priority
-                className="object-cover"
-                sizes="(max-width: 1024px) 340px, 400px"
+        <div className="lg:col-span-5 order-1 lg:order-2">
+          <div className="relative w-full max-w-sm sm:max-w-md mx-auto flex justify-center items-center">
+            <div className="relative w-full isolate">
+              <div
+                className="absolute inset-0 z-0 bg-gradient-to-tr from-brand-blue to-brand-dark rounded-3xl opacity-15 scale-105 rotate-1 transition-transform duration-500 hover:rotate-0"
+                aria-hidden="true"
               />
+              <div className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl border-4 sm:border-8 border-white bg-slate-100 z-10">
+                <Image
+                  src="/Faye Sifontes.jpeg"
+                  alt="Lcda. Faye Sifontes Noriega — Contador Público Independiente"
+                  fill
+                  priority
+                  className="object-cover object-top"
+                  sizes="(max-width: 640px) 384px, 448px"
+                />
+              </div>
             </div>
           </div>
         </div>
