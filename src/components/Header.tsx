@@ -60,6 +60,13 @@ export default function Header() {
             </Link>
 
             <Link
+              href="/quienes-somos"
+              className="text-sm font-medium text-brand-dark/70 hover:text-brand-blue transition-colors"
+            >
+              Quiénes Somos
+            </Link>
+
+            <Link
               href="/#categorias"
               className="text-sm font-medium text-brand-dark/70 hover:text-brand-blue transition-colors"
             >
@@ -151,6 +158,14 @@ export default function Header() {
               onClick={() => setOpen(false)}
             >
               Inicio
+            </Link>
+
+            <Link
+              href="/quienes-somos"
+              className="px-3 py-2 rounded-lg text-brand-dark/70 hover:bg-brand-50 hover:text-brand-blue font-medium"
+              onClick={() => setOpen(false)}
+            >
+              Quiénes Somos
             </Link>
 
             <Link
