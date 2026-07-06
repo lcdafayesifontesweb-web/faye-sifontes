@@ -52,9 +52,36 @@ const benefits = [
 ];
 
 const galleryImages = [
-  { src: "/coworking-1.jpg", alt: "Sala de reuniones SS Consultores", span: "lg:col-span-2 lg:row-span-2" },
-  { src: "/coworking-2.jpg", alt: "Espacio de coworking", span: "lg:col-span-1" },
-  { src: "/coworking-3.jpg", alt: "Instalaciones climatizadas", span: "lg:col-span-1" },
+  {
+    src: "/coworking-1.jpg",
+    alt: "Sala de reuniones SS Consultores",
+    span: "sm:col-span-2 lg:col-span-2",
+    tall: true,
+  },
+  {
+    src: "/coworking-2.jpg",
+    alt: "Espacio de coworking",
+    span: "",
+    tall: false,
+  },
+  {
+    src: "/coworking-3.jpg",
+    alt: "Instalaciones climatizadas",
+    span: "",
+    tall: false,
+  },
+  {
+    src: "/coworking-4.jpg",
+    alt: "Área de trabajo colaborativo SS Consultores",
+    span: "",
+    tall: false,
+  },
+  {
+    src: "/coworking-5.jpg",
+    alt: "Espacio profesional para reuniones y capacitaciones",
+    span: "",
+    tall: false,
+  },
 ];
 
 export default function CoworkingPage() {
@@ -138,20 +165,24 @@ export default function CoworkingPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 lg:grid-rows-2 gap-4 lg:gap-6 lg:h-[520px]">
-            {galleryImages.map(({ src, alt, span }, index) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+            {galleryImages.map(({ src, alt, span, tall }) => (
               <div
                 key={src}
-                className={`group relative rounded-xl overflow-hidden bg-brand-dark/5 min-h-[220px] transition-transform duration-300 ease-in-out hover:scale-105 hover:shadow-xl hover:z-10 ${span} ${
-                  index === 0 ? "lg:min-h-0" : ""
-                }`}
+                className={`group relative rounded-xl overflow-hidden bg-brand-dark/5 shadow-md min-h-[220px] ${
+                  tall ? "sm:min-h-[260px] lg:min-h-[300px]" : ""
+                } transition-transform duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:z-10 ${span}`}
               >
                 <Image
                   src={src}
                   alt={alt}
                   fill
                   className="object-cover transition-transform duration-300 ease-in-out group-hover:scale-105"
-                  sizes="(max-width: 1024px) 100vw, 33vw"
+                  sizes={
+                    span
+                      ? "(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 66vw"
+                      : "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  }
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-brand-dark/40 to-transparent pointer-events-none" />
               </div>
