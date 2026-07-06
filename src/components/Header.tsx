@@ -39,14 +39,14 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-brand-gray/30 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20 lg:h-24">
+        <div className="flex items-center justify-between min-h-[80px] sm:min-h-[88px] lg:min-h-[100px] py-2 lg:py-3">
           <Link href="/" className="flex items-center group shrink-0">
             <Image
               src="/logofaye.png"
               alt="Lcda. Faye Sifontes — SS Consultores"
-              width={180}
-              height={60}
-              className="h-12 md:h-14 w-auto object-contain"
+              width={260}
+              height={90}
+              className="h-16 w-auto sm:h-20 md:h-24 object-contain"
               priority
             />
           </Link>
