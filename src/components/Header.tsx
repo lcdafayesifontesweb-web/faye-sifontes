@@ -42,11 +42,11 @@ export default function Header() {
         <div className="flex items-center justify-between h-20 lg:h-24">
           <Link href="/" className="flex items-center group shrink-0">
             <Image
-              src="/logo-sifontes.jpg"
+              src="/logofaye.png"
               alt="Lcda. Faye Sifontes — SS Consultores"
-              width={240}
-              height={77}
-              className="h-16 sm:h-20 w-auto object-contain"
+              width={180}
+              height={60}
+              className="h-12 md:h-14 w-auto object-contain"
               priority
             />
           </Link>

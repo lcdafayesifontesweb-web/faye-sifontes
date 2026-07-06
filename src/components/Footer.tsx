@@ -9,13 +9,13 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
           <div className="lg:col-span-1">
-            <Link href="/" className="inline-block mb-5 bg-white rounded-lg px-3 py-2">
+            <Link href="/" className="inline-block mb-5">
               <Image
-                src="/logo-sifontes.jpg"
+                src="/logoblanco.png"
                 alt="Lcda. Faye Sifontes — SS Consultores"
-                width={160}
-                height={52}
-                className="h-12 w-auto object-contain"
+                width={176}
+                height={58}
+                className="w-36 sm:w-44 h-auto object-contain"
               />
             </Link>
             <p className="text-brand-gray text-sm mb-4">{BRAND.handle}</p>
