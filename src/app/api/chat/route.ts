@@ -6,7 +6,7 @@ import { normalizeFeaturesList } from "@/lib/features";
 export const runtime = "nodejs";
 
 const MAX_HISTORY = 12;
-const GEMINI_MODEL = "gemini-1.5-flash";
+const GEMINI_MODEL = "gemini-3.1-flash-lite";
 
 const generalContext =
   "Empresa: SS Consultores. Directora: Lcda. Faye Sifontes. Sede: CC Centinela PB local 2, Puerto La Cruz, Anzoátegui. Contacto/WhatsApp: 0424-8979101. Alianza institucional: Certificados avalados por EDUCA ante el MPPE solo para Asistente Administrativo, Contable y Excel; el resto son certificados por la Lcda. Faye Sifontes. Métodos de pago: Pago Móvil, Zelle y Efectivo.";
@@ -184,7 +184,7 @@ export async function POST(request: Request) {
 
     if (!response.ok) {
       const errText = await response.text();
-      console.error("[GEMINI ERROR]:", errText);
+      console.error("[GEMINI ERROR]:", response.status, errText);
       return okMessage(FALLBACK_REPLY);
     }
 
