@@ -8,6 +8,8 @@ import type {
 export const runtime = "nodejs";
 
 const MAX_HISTORY = 12;
+/** gemini-1.5-flash ya no está disponible (404); flash actual de Google */
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.0-flash";
 
 function isCourseContext(value: unknown): value is CourseChatContext {
   if (!value || typeof value !== "object") return false;
@@ -26,16 +28,22 @@ function isCourseContext(value: unknown): value is CourseChatContext {
 function sanitizeMessages(messages: unknown): ChatMessage[] {
   if (!Array.isArray(messages)) return [];
   return messages
-    .filter(
-      (m): m is ChatMessage =>
-        !!m &&
-        typeof m === "object" &&
-        (m.role === "user" || m.role === "assistant") &&
-        typeof m.content === "string" &&
-        m.content.trim().length > 0
-    )
+    .filter((m): m is { role: string; content: string } => {
+      if (!m || typeof m !== "object") return false;
+      const row = m as { role?: unknown; content?: unknown };
+      return (
+        typeof row.content === "string" &&
+        row.content.trim().length > 0 &&
+        (row.role === "user" ||
+          row.role === "assistant" ||
+          row.role === "model")
+      );
+    })
     .map((m) => ({
-      role: m.role,
+      role:
+        m.role === "assistant" || m.role === "model"
+          ? ("assistant" as const)
+          : ("user" as const),
       content: m.content.trim().slice(0, 2000),
     }))
     .slice(-MAX_HISTORY);
@@ -45,11 +53,21 @@ function buildSystemPrompt(courseContext: CourseChatContext): string {
   return `Eres el Asistente Virtual Inteligente de SS Consultores. Tu objetivo es brindar asistencia comercial y académica precisa sobre nuestros cursos. Responde de forma cordial, concisa y persuasiva utilizando ÚNICAMENTE la información contenida en este contexto oficial del curso: ${JSON.stringify(courseContext)}. Reglas de seguridad: 1) Si el usuario pregunta algo que no esté explícitamente en el contexto (ej. descuentos especiales, pagos a plazos no descritos, problemas personales), indícale amablemente que puede consultarlo directamente con nuestro equipo académico haciendo clic en el botón de WhatsApp. 2) No inventes datos, fechas ni tarifas. 3) Mantén respuestas breves (máximo 2 o 3 párrafos cortos).`;
 }
 
-function toGeminiContents(history: ChatMessage[]) {
-  return history.map((m) => ({
-    role: m.role === "assistant" ? ("model" as const) : ("user" as const),
-    parts: [{ text: m.content }],
-  }));
+interface GeminiPart {
+  text?: string;
+}
+
+interface GeminiResponse {
+  candidates?: {
+    content?: {
+      parts?: GeminiPart[];
+    };
+  }[];
+  error?: {
+    message?: string;
+    status?: string;
+    code?: number;
+  };
 }
 
 export async function POST(request: Request) {
@@ -78,8 +96,8 @@ export async function POST(request: Request) {
     );
   }
 
-  const history = sanitizeMessages(body.messages);
-  if (history.length === 0) {
+  const messages = sanitizeMessages(body.messages);
+  if (messages.length === 0) {
     return NextResponse.json(
       { error: "Se requiere al menos un mensaje de usuario" },
       { status: 400 }
@@ -87,47 +105,43 @@ export async function POST(request: Request) {
   }
 
   const systemPrompt = buildSystemPrompt(body.courseContext);
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
+  // v1beta + modelo Flash vigente (gemini-1.5-flash devolvía 404)
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
+
+  const formattedContents = messages.map((m) => ({
+    role: m.role === "assistant" ? ("model" as const) : ("user" as const),
+    parts: [{ text: m.content }],
+  }));
 
   try {
-    const geminiRes = await fetch(url, {
+    const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         system_instruction: {
-          parts: [{ text: systemPrompt }],
+          parts: [{ text: systemPrompt || "Eres un asistente virtual útil." }],
         },
-        contents: toGeminiContents(history),
-        generationConfig: {
-          temperature: 0.4,
-          maxOutputTokens: 450,
-        },
+        contents: formattedContents,
       }),
     });
 
-    if (!geminiRes.ok) {
-      const errText = await geminiRes.text();
-      console.error("[api/chat] Gemini error:", geminiRes.status, errText);
+    const data = (await response.json()) as GeminiResponse;
+
+    if (!response.ok) {
+      console.error("Error de Gemini API:", JSON.stringify(data));
       return NextResponse.json(
-        {
-          error:
-            "No pudimos obtener respuesta del asistente. Intenta de nuevo en unos segundos.",
-        },
-        { status: 502 }
+        { error: "Error al comunicarse con Gemini", details: data },
+        { status: response.status }
       );
     }
 
-    const data = (await geminiRes.json()) as {
-      candidates?: {
-        content?: { parts?: { text?: string }[] };
-      }[];
-    };
-
-    const message =
+    const replyText =
       data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ||
-      "No tengo una respuesta en este momento. Por favor escribe a nuestro equipo por WhatsApp.";
+      "No pude generar una respuesta.";
 
-    return NextResponse.json({ message });
+    // Formato que espera SmartChatbox: { message: string }
+    return NextResponse.json({ message: replyText });
   } catch (err) {
     console.error("[api/chat] unexpected:", err);
     return NextResponse.json(
