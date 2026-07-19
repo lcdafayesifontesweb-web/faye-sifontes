@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { client as sanityClient } from "@/sanity/client";
 import type { ChatMessage, ChatRequestBody } from "@/types/chat";
+import { normalizeFeaturesList } from "@/lib/features";
 
 export const runtime = "nodejs";
 
@@ -33,7 +34,7 @@ interface SanityCourseChatData {
   date?: string;
   schedule?: string;
   modality?: string;
-  features?: string[];
+  features?: string | string[];
   price?: number;
   currency?: string;
   certifiedBy?: string;
@@ -86,7 +87,9 @@ function toGeminiContents(messages: ChatMessage[]): GeminiContent[] {
   }));
 }
 
-function buildSystemInstruction(courseData: SanityCourseChatData): string {
+function buildSystemInstruction(
+  courseData: Omit<SanityCourseChatData, "features"> & { features: string[] }
+): string {
   return `${generalContext}
 
 Estás respondiendo dudas en la página de este curso específico. Basa tus respuestas en estos datos: ${JSON.stringify(courseData)}
@@ -153,7 +156,13 @@ export async function POST(request: Request) {
     );
   }
 
-  const systemPrompt = buildSystemInstruction(courseData);
+  // Normaliza temario (array legado o texto multilínea) para el prompt
+  const courseForPrompt = {
+    ...courseData,
+    features: normalizeFeaturesList(courseData.features),
+  };
+
+  const systemPrompt = buildSystemInstruction(courseForPrompt);
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`;
 
   try {

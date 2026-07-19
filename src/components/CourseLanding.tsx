@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import type { CoursePageData } from "@/sanity/queries";
 import { BRAND } from "@/data/coursesData";
+import { normalizeFeaturesList } from "@/lib/features";
 import CertificationBadge from "./CertificationBadge";
 import CourseGallery from "./CourseGallery";
 import SmartChatbox from "./SmartChatbox";
@@ -152,7 +153,7 @@ export default function CourseLanding({ course }: CourseLandingProps) {
                 ¿Qué aprenderás?
               </h2>
               <ul className="grid sm:grid-cols-2 gap-4">
-                {course.features.map((feature) => (
+                {normalizeFeaturesList(course.features).map((feature) => (
                   <li
                     key={feature}
                     className="flex items-start gap-3 p-4 rounded-xl bg-brand-50 border border-brand-100"

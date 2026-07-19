@@ -25,7 +25,8 @@ export interface SanityCourse {
   date: string;
   schedule: string;
   modality: string;
-  features?: string[];
+  /** Legado: string[]; nuevo: texto multilínea */
+  features?: string | string[];
   price?: number;
   currency?: string;
   featured?: boolean;

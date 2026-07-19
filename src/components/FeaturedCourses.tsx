@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import type { HomeCourse } from "@/sanity/queries";
 import { categories, type CourseArea } from "@/data/coursesData";
+import { normalizeFeaturesList } from "@/lib/features";
 import CertificationBadge from "./CertificationBadge";
 
 const PAGE_SIZE = 6;
@@ -261,7 +262,9 @@ function CourseCard({ course }: { course: HomeCourse }) {
         )}
 
         <div className="flex flex-wrap gap-2 mb-5">
-          {course.features.slice(0, 2).map((f) => (
+          {normalizeFeaturesList(course.features)
+            .slice(0, 2)
+            .map((f) => (
             <span
               key={f}
               className="text-xs bg-brand-50 text-brand-700 px-2.5 py-1 rounded-full font-medium line-clamp-1 max-w-full"

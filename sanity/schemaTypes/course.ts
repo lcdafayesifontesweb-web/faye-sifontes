@@ -73,9 +73,11 @@ export const course = defineType({
     defineField({
       name: "features",
       title: "Características / Beneficios",
-      type: "array",
-      of: [defineArrayMember({ type: "string" })],
-      validation: (rule) => rule.min(1),
+      type: "text",
+      rows: 12,
+      description:
+        "Pega el temario o beneficios completos (una línea por ítem). También acepta viñetas • o -.",
+      validation: (rule) => rule.required().min(1),
     }),
     defineField({
       name: "instructor",

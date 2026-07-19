@@ -1,6 +1,7 @@
 import { client } from "./client";
 import { urlFor } from "./image";
 import type { SanityCourse, SanityInstructor } from "./types";
+import { normalizeFeaturesList } from "@/lib/features";
 
 export const ALL_COURSES_QUERY = `*[_type == "course"] | order(_createdAt desc) {
   _id,
@@ -187,7 +188,7 @@ function mapSanityCourse(course: SanityCourse): HomeCourse {
     date: course.date,
     schedule: course.schedule,
     modalityLabel: MODALITY_LABELS[course.modality] ?? course.modality,
-    features: course.features ?? [],
+    features: normalizeFeaturesList(course.features),
     price: course.price ?? 0,
     currency: course.currency ?? "USD",
     featured: course.featured ?? false,
@@ -251,7 +252,7 @@ function mapSanityCoursePage(course: SanityCourse): CoursePageData {
     date: course.date,
     schedule: course.schedule,
     modalityLabel: MODALITY_LABELS[course.modality] ?? course.modality,
-    features: course.features ?? [],
+    features: normalizeFeaturesList(course.features),
     price: course.price ?? 0,
     currency: course.currency ?? "USD",
     featured: course.featured ?? false,
