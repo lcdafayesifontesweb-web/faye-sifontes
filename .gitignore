@@ -3,3 +3,8 @@ node_modules
 # Next.js
 .next/
 node_modules/
+
+# Scripts temporales con tokens
+importar-cursos-con-fotos.js
+corregir-ids-cursos.js
+.env.local
