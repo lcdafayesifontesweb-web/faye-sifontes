@@ -4,8 +4,10 @@ import { usePathname } from "next/navigation";
 import { DEFAULT_WHATSAPP_FLOAT_URL } from "@/lib/whatsapp";
 
 /**
- * Burbuja flotante WhatsApp — solo desktop (md+).
- * Oculta en móvil y en /studio.
+ * Burbuja flotante WhatsApp — visible en todas las pantallas.
+ * En móvil se eleva (bottom-24) para no chocar con la barra sticky
+ * "Reserva tu lugar" de las páginas de curso.
+ * Oculta en /studio.
  */
 export default function WhatsAppFloat() {
   const pathname = usePathname();
@@ -17,11 +19,11 @@ export default function WhatsAppFloat() {
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Escribir por WhatsApp"
-      className="hidden md:flex fixed bottom-6 right-6 z-40 h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg shadow-black/20 transition-all duration-300 hover:scale-110 hover:shadow-xl hover:bg-[#1ebe57] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#25D366] focus-visible:ring-offset-2"
+      className="flex fixed z-50 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg shadow-black/20 transition-all duration-300 hover:scale-110 hover:shadow-xl hover:bg-[#1ebe57] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#25D366] focus-visible:ring-offset-2 bottom-24 right-4 h-12 w-12 md:bottom-6 md:right-6 md:h-14 md:w-14"
     >
       <svg
         viewBox="0 0 32 32"
-        className="h-7 w-7"
+        className="h-6 w-6 md:h-7 md:w-7"
         fill="currentColor"
         aria-hidden="true"
       >

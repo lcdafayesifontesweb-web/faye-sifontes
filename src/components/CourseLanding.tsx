@@ -64,7 +64,7 @@ export default function CourseLanding({ course }: CourseLandingProps) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 overflow-x-hidden">
       <section
         className={`relative bg-gradient-to-br ${course.imageGradient} text-white overflow-hidden`}
       >
@@ -80,10 +80,10 @@ export default function CourseLanding({ course }: CourseLandingProps) {
         )}
         <div className="absolute inset-0 bg-black/50" />
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24 min-w-0">
           <nav
             aria-label="Breadcrumb"
-            className="text-sm md:text-base font-medium mb-4 inline-flex flex-wrap items-center gap-x-2 gap-y-1"
+            className="text-sm md:text-base font-medium mb-4 inline-flex flex-wrap items-center gap-x-2 gap-y-1 max-w-full"
           >
             <Link
               href="/"
@@ -105,13 +105,13 @@ export default function CourseLanding({ course }: CourseLandingProps) {
               className="w-4 h-4 text-white/40 shrink-0"
               aria-hidden="true"
             />
-            <span className="text-white/90 line-clamp-1 max-w-[min(100%,20rem)] sm:max-w-md">
+            <span className="text-white/90 line-clamp-1 min-w-0 max-w-[min(100%,20rem)] sm:max-w-md">
               {course.title}
             </span>
           </nav>
 
-          <div className="grid lg:grid-cols-2 gap-10 items-center">
-            <div>
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-10 items-center min-w-0">
+            <div className="min-w-0 max-w-full">
               {course.featured && (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-blue text-white text-xs font-bold mb-4">
                   <Star className="w-3 h-3 fill-white" />
@@ -119,17 +119,17 @@ export default function CourseLanding({ course }: CourseLandingProps) {
                 </span>
               )}
               {course.certifiedBy && (
-                <div className="mb-4">
+                <div className="mb-4 max-w-full">
                   <CertificationBadge
                     certifiedBy={course.certifiedBy}
                     variant="light"
                   />
                 </div>
               )}
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-tight mb-6">
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-tight mb-6 break-words">
                 {course.title}
               </h1>
-              <p className="text-lg text-white/90 leading-relaxed mb-8 whitespace-pre-line">
+              <p className="text-lg text-white/90 leading-relaxed mb-8 whitespace-pre-line break-words">
                 {course.description}
               </p>
               <div className="flex flex-wrap gap-4">
@@ -143,7 +143,7 @@ export default function CourseLanding({ course }: CourseLandingProps) {
               </div>
             </div>
 
-            <div className="bg-white/10 backdrop-blur-md rounded-3xl border border-white/20 p-7 space-y-5">
+            <div className="w-full max-w-full min-w-0 bg-white/10 backdrop-blur-md rounded-3xl border border-white/20 p-5 sm:p-7 space-y-5 overflow-hidden">
               <h2 className="text-lg font-bold text-white mb-2">Ficha del Curso</h2>
               <FichaItem icon={Calendar} label="Fecha" value={course.date} />
               <FichaItem icon={Clock} label="Horario" value={course.schedule} />
@@ -151,9 +151,9 @@ export default function CourseLanding({ course }: CourseLandingProps) {
               {instructor && (
                 <FichaItem icon={User} label="Facilitador" value={instructor.name} />
               )}
-              <div className="pt-4 border-t border-white/20">
+              <div className="pt-4 border-t border-white/20 min-w-0">
                 <p className="text-white/70 text-sm">Inversión</p>
-                <p className="text-4xl font-extrabold text-brand-300">
+                <p className="text-3xl sm:text-4xl font-extrabold text-brand-300 break-words">
                   ${course.price}{" "}
                   <span className="text-lg font-medium text-white/80">
                     {course.currency}
@@ -167,21 +167,23 @@ export default function CourseLanding({ course }: CourseLandingProps) {
 
       <CourseGallery images={course.gallery} courseTitle={course.title} />
 
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-3 gap-12">
-            <div className="lg:col-span-2">
+      <section className="py-16 bg-white overflow-x-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-w-0">
+          <div className="grid lg:grid-cols-3 gap-8 lg:gap-12 min-w-0">
+            <div className="lg:col-span-2 min-w-0 max-w-full">
               <h2 className="text-2xl font-bold text-slate-900 mb-6">
                 ¿Qué aprenderás?
               </h2>
-              <ul className="grid sm:grid-cols-2 gap-4">
+              <ul className="grid sm:grid-cols-2 gap-4 min-w-0">
                 {normalizeFeaturesList(course.features).map((feature) => (
                   <li
                     key={feature}
-                    className="flex items-start gap-3 p-4 rounded-xl bg-brand-50 border border-brand-100"
+                    className="flex items-start gap-3 p-4 rounded-xl bg-brand-50 border border-brand-100 min-w-0"
                   >
                     <CheckCircle2 className="w-5 h-5 text-brand-600 shrink-0 mt-0.5" />
-                    <span className="text-sm text-slate-700 font-medium">{feature}</span>
+                    <span className="text-sm text-slate-700 font-medium min-w-0 break-words">
+                      {feature}
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -216,8 +218,8 @@ export default function CourseLanding({ course }: CourseLandingProps) {
               )}
             </div>
 
-            <div id="registro" className="lg:col-span-1">
-              <div className="sticky top-24 space-y-6">
+            <div id="registro" className="lg:col-span-1 min-w-0 max-w-full">
+              <div className="sticky top-24 space-y-6 min-w-0">
                 <SmartChatbox
                   courseSlug={course.slug}
                   courseTitle={course.title}
