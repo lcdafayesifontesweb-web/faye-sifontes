@@ -31,11 +31,16 @@ export default function SmartChatbox({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const inFlightRef = useRef(false);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    // Solo desplaza el panel interno del chat — nunca la página completa.
+    const list = listRef.current;
+    if (list) {
+      list.scrollTop = list.scrollHeight;
+    }
   }, [messages, loading]);
 
   async function handleSubmit(e: FormEvent) {
@@ -134,7 +139,10 @@ export default function SmartChatbox({
         </div>
       </header>
 
-      <div className="h-72 overflow-y-auto p-4 space-y-3 bg-slate-50">
+      <div
+        ref={listRef}
+        className="h-72 overflow-y-auto p-4 space-y-3 bg-slate-50"
+      >
         {messages.map((m) =>
           m.role === "assistant" ? (
             <div key={m.id} className="flex gap-2.5">

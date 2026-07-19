@@ -276,9 +276,10 @@ function CourseCard({ course }: { course: HomeCourse }) {
 
         <Link
           href={`/curso/${course.slug}`}
+          scroll
           className="mt-auto inline-flex items-center gap-2 w-full justify-center px-5 py-3 rounded-xl bg-brand-blue hover:bg-brand-600 text-white font-semibold shadow-md hover:shadow-lg transition-all"
         >
-          Reserva tu lugar
+          Más información
           <ArrowRight className="w-4 h-4" />
         </Link>
       </div>
