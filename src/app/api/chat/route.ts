@@ -8,8 +8,13 @@ import type {
 export const runtime = "nodejs";
 
 const MAX_HISTORY = 12;
-/** Modelo Flash de cuota gratuita (~15 RPM). Sin reintentos en este route. */
-const GEMINI_MODEL = "gemini-1.5-flash";
+
+/**
+ * gemini-1.5-flash fue retirado (404 en generateContent).
+ * gemini-2.0-flash es el Flash actual en v1beta.
+ * Override opcional: GEMINI_MODEL en env.
+ */
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.0-flash";
 
 function isCourseContext(value: unknown): value is CourseChatContext {
   if (!value || typeof value !== "object") return false;
@@ -62,6 +67,7 @@ interface GeminiResponse {
     content?: {
       parts?: GeminiPart[];
     };
+    finishReason?: string;
   }[];
   error?: {
     message?: string;
@@ -70,8 +76,29 @@ interface GeminiResponse {
   };
 }
 
+function humanGeminiError(status: number, data: GeminiResponse): string {
+  const apiMsg = data.error?.message || data.error?.status || "";
+  if (status === 404) {
+    return `Modelo no encontrado (${GEMINI_MODEL}). Revisa GEMINI_MODEL en Vercel.`;
+  }
+  if (status === 429) {
+    return "Límite de cuota de Gemini alcanzado. Espera un minuto e intenta de nuevo.";
+  }
+  if (status === 400) {
+    return apiMsg
+      ? `Solicitud inválida: ${apiMsg}`
+      : "Solicitud inválida hacia Gemini.";
+  }
+  if (status === 403 || status === 401) {
+    return "API key de Gemini inválida o sin permisos. Revisa GEMINI_API_KEY en Vercel.";
+  }
+  return apiMsg
+    ? `Error Gemini (${status}): ${apiMsg}`
+    : `Error al comunicarse con Gemini (${status}).`;
+}
+
 export async function POST(request: Request) {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY?.trim();
   if (!apiKey) {
     return NextResponse.json(
       {
@@ -104,10 +131,16 @@ export async function POST(request: Request) {
     );
   }
 
-  const systemPrompt = buildSystemPrompt(body.courseContext);
+  // Gemini exige que contents empiece por rol "user"
+  if (messages[0]?.role !== "user") {
+    return NextResponse.json(
+      { error: "El historial debe comenzar con un mensaje del usuario" },
+      { status: 400 }
+    );
+  }
 
-  // Una sola petición por request HTTP — sin retries
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
+  const systemPrompt = buildSystemPrompt(body.courseContext);
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`;
 
   const formattedContents = messages.map((m) => ({
     role: m.role === "assistant" ? ("model" as const) : ("user" as const),
@@ -121,27 +154,49 @@ export async function POST(request: Request) {
       cache: "no-store",
       body: JSON.stringify({
         system_instruction: {
-          parts: [{ text: systemPrompt || "Eres un asistente virtual útil." }],
+          parts: [{ text: systemPrompt }],
         },
         contents: formattedContents,
+        generationConfig: {
+          temperature: 0.4,
+          maxOutputTokens: 512,
+        },
       }),
     });
 
     const data = (await response.json()) as GeminiResponse;
 
     if (!response.ok) {
-      console.error("Error de Gemini API:", JSON.stringify(data));
+      console.error(
+        "[api/chat] Gemini error:",
+        response.status,
+        GEMINI_MODEL,
+        JSON.stringify(data)
+      );
       return NextResponse.json(
-        { error: "Error al comunicarse con Gemini", details: data },
+        {
+          error: humanGeminiError(response.status, data),
+          details: data,
+          model: GEMINI_MODEL,
+        },
         { status: response.status }
       );
     }
 
     const replyText =
-      data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ||
-      "No pude generar una respuesta.";
+      data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
 
-    // Formato que espera SmartChatbox: { message: string }
+    if (!replyText) {
+      console.error("[api/chat] empty candidates:", JSON.stringify(data));
+      return NextResponse.json(
+        {
+          error:
+            "Gemini no devolvió texto. Intenta de nuevo o escribe por WhatsApp.",
+        },
+        { status: 502 }
+      );
+    }
+
     return NextResponse.json({ message: replyText });
   } catch (err) {
     console.error("[api/chat] unexpected:", err);
