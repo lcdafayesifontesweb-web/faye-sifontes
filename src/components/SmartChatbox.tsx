@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { Bot, Loader2, Send } from "lucide-react";
 import type { ChatMessage } from "@/types/chat";
+import { renderChatRichText } from "@/lib/chatRichText";
 
 interface SmartChatboxProps {
   courseSlug: string;
@@ -101,7 +102,7 @@ export default function SmartChatbox({
           id: `a-err-${Date.now()}`,
           role: "assistant",
           content:
-            "Lo siento, tuve un problema técnico. Puedes escribirnos por WhatsApp y el equipo académico te atenderá de inmediato.",
+            "Lo siento, tuve un problema técnico. Puedes escribirnos por WhatsApp al 0424-8979101 y el equipo académico te atenderá de inmediato.",
         },
       ]);
     } finally {
@@ -141,8 +142,8 @@ export default function SmartChatbox({
                 <Bot className="w-3.5 h-3.5 text-brand-blue" />
               </div>
               <div className="bg-white rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm border border-slate-100 max-w-[85%]">
-                <p className="text-sm text-brand-dark/80 leading-relaxed whitespace-pre-wrap">
-                  {m.content}
+                <p className="text-sm text-brand-dark/80 leading-relaxed">
+                  {renderChatRichText(m.content)}
                 </p>
               </div>
             </div>

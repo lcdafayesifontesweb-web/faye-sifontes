@@ -12,7 +12,7 @@ const generalContext =
   "Empresa: SS Consultores. Directora: Lcda. Faye Sifontes. Sede: CC Centinela PB local 2, Puerto La Cruz, Anzoátegui. Contacto/WhatsApp: 0424-8979101. Alianza institucional: Certificados avalados por EDUCA ante el MPPE solo para Asistente Administrativo, Contable y Excel; el resto son certificados por la Lcda. Faye Sifontes. Métodos de pago: Pago Móvil, Zelle y Efectivo.";
 
 const FALLBACK_REPLY =
-  "En este momento nuestro asistente está atendiendo múltiples consultas. Por favor, espera unos segundos o escríbenos directamente por WhatsApp para atención inmediata.";
+  "En este momento nuestro asistente está atendiendo múltiples consultas. Por favor, espera unos segundos o escríbenos directamente por WhatsApp al 0424-8979101 para atención inmediata.";
 
 const COURSE_BY_SLUG_QUERY = `*[_type == "course" && slug.current == $slug][0]{
   title,
@@ -94,7 +94,7 @@ function buildSystemInstruction(
 
 Estás respondiendo dudas en la página de este curso específico. Basa tus respuestas en estos datos: ${JSON.stringify(courseData)}
 
-Reglas: 1) Usa ÚNICAMENTE la información de empresa (arriba) y del curso activo (courseData). 2) Si preguntan horas, fechas, precio, modalidad, contenido o certificado, responde solo con lo que aparece en courseData. 3) Si no está en el contexto, indica amablemente que contacten por WhatsApp al 0424-8979101. 4) No inventes datos. 5) Respuestas breves (máximo 2-3 párrafos cortos).`;
+Reglas: 1) Usa ÚNICAMENTE la información de empresa (arriba) y del curso activo (courseData). 2) Si preguntan horas, fechas, precio, modalidad, contenido o certificado, responde solo con lo que aparece en courseData. 3) Si no está en el contexto, indica amablemente que contacten por WhatsApp. Cuando menciones el número, escríbelo SIEMPRE exactamente así: 0424-8979101 (sin espacios, con el guion en esa posición, sin asteriscos markdown alrededor del número). 4) No inventes datos. 5) Puedes usar **negrita** con doble asterisco solo en palabras o frases cortas, nunca envolviendo el número de WhatsApp. 6) Respuestas breves (máximo 2-3 párrafos cortos).`;
 }
 
 export async function POST(request: Request) {
