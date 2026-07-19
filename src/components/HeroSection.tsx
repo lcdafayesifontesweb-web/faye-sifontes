@@ -45,12 +45,14 @@ export default function HeroSection({
 
         <SearchBar courses={searchCourses} />
 
-        <div className="mt-14 grid grid-cols-3 gap-6 max-w-lg mx-auto">
+        <div className="mt-14 grid grid-cols-3 gap-2 sm:gap-6 max-w-lg mx-auto">
           {stats.map((stat) => (
-            <div key={stat.label} className="text-center">
+            <div key={stat.label} className="text-center min-w-0">
               <stat.icon className="w-5 h-5 text-brand-blue mx-auto mb-2" />
-              <p className="text-2xl font-bold">{stat.value}</p>
-              <p className="text-xs text-white/70 mt-1">{stat.label}</p>
+              <p className="text-xl sm:text-2xl font-bold">{stat.value}</p>
+              <p className="text-[10px] sm:text-xs text-white/70 mt-1 leading-tight">
+                {stat.label}
+              </p>
             </div>
           ))}
         </div>

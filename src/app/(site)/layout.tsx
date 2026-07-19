@@ -11,7 +11,7 @@ export default function SiteLayout({
     <>
       <HomeScrollHandler />
       <Header />
-      <main>{children}</main>
+      <main className="min-w-0 overflow-x-hidden">{children}</main>
       <Footer />
     </>
   );

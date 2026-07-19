@@ -206,12 +206,10 @@ export default function CourseLanding({ course }: CourseLandingProps) {
                         {instructor.avatarInitials}
                       </div>
                     )}
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <p className="font-bold text-slate-900">{instructor.name}</p>
                       <p className="text-sm text-brand-600">{instructor.role}</p>
-                      <p className="text-sm text-slate-500 mt-2 leading-relaxed whitespace-pre-line">
-                        {instructor.bio}
-                      </p>
+                      <InstructorBio bio={instructor.bio} />
                     </div>
                   </div>
                 </div>
@@ -290,21 +288,27 @@ export default function CourseLanding({ course }: CourseLandingProps) {
                           </p>
                         </div>
                         <dl className="space-y-2 text-sm">
-                          <div className="flex justify-between">
-                            <dt className="text-slate-500">Banco</dt>
-                            <dd className="font-medium">{BRAND.pagoMovil.banco}</dd>
+                          <div className="flex justify-between gap-3">
+                            <dt className="text-slate-500 shrink-0">Banco</dt>
+                            <dd className="font-medium min-w-0 text-right break-words">
+                              {BRAND.pagoMovil.banco}
+                            </dd>
                           </div>
-                          <div className="flex justify-between">
-                            <dt className="text-slate-500">Teléfono</dt>
-                            <dd className="font-medium">{BRAND.pagoMovil.telefono}</dd>
+                          <div className="flex justify-between gap-3">
+                            <dt className="text-slate-500 shrink-0">Teléfono</dt>
+                            <dd className="font-medium min-w-0 text-right break-words">
+                              {BRAND.pagoMovil.telefono}
+                            </dd>
                           </div>
-                          <div className="flex justify-between">
-                            <dt className="text-slate-500">Cédula</dt>
-                            <dd className="font-medium">{BRAND.pagoMovil.cedula}</dd>
+                          <div className="flex justify-between gap-3">
+                            <dt className="text-slate-500 shrink-0">Cédula</dt>
+                            <dd className="font-medium min-w-0 text-right break-words">
+                              {BRAND.pagoMovil.cedula}
+                            </dd>
                           </div>
-                          <div className="flex justify-between border-t border-slate-200 pt-2 mt-2">
-                            <dt className="text-slate-500">Monto</dt>
-                            <dd className="font-bold text-brand-700">
+                          <div className="flex justify-between gap-3 border-t border-slate-200 pt-2 mt-2">
+                            <dt className="text-slate-500 shrink-0">Monto</dt>
+                            <dd className="font-bold text-brand-700 min-w-0 text-right">
                               ${course.price} {course.currency}
                             </dd>
                           </div>
@@ -450,14 +454,62 @@ function FichaItem({
   value: string;
 }) {
   return (
-    <div className="flex items-start gap-3">
+    <div className="flex items-start gap-3 min-w-0">
       <div className="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
         <Icon className="w-4 h-4 text-brand-300" />
       </div>
-      <div>
+      <div className="min-w-0">
         <p className="text-white/60 text-xs uppercase tracking-wider">{label}</p>
-        <p className="text-white font-medium text-sm">{value}</p>
+        <p className="text-white font-medium text-sm break-words">{value}</p>
       </div>
+    </div>
+  );
+}
+
+/** Primer bloque de bio: salto de párrafo, salto de línea, o primera oración. */
+function getBioPreview(bio: string): string {
+  const trimmed = bio.trim();
+  if (!trimmed) return "";
+
+  const byParagraph = trimmed.split(/\n\s*\n/)[0]?.trim();
+  if (byParagraph && byParagraph.length < trimmed.length) return byParagraph;
+
+  const byNewline = trimmed.split(/\n/)[0]?.trim();
+  if (byNewline && byNewline.length < trimmed.length) return byNewline;
+
+  const sentenceMatch = trimmed.match(/^(.+?[.!?])(?:\s|$)/);
+  if (sentenceMatch && sentenceMatch[1].length < trimmed.length) {
+    return sentenceMatch[1].trim();
+  }
+
+  return trimmed;
+}
+
+function InstructorBio({ bio }: { bio: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const preview = getBioPreview(bio);
+  const hasMore = preview.length < bio.trim().length;
+
+  return (
+    <div className="mt-2">
+      <p className="hidden md:block text-sm text-slate-500 leading-relaxed whitespace-pre-line break-words">
+        {bio}
+      </p>
+
+      <p className="md:hidden text-sm text-slate-500 leading-relaxed whitespace-pre-line break-words">
+        {expanded || !hasMore ? bio : preview}
+      </p>
+
+      {hasMore && (
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="md:hidden mt-1.5 text-sm font-medium text-brand-blue hover:text-brand-600 transition-colors"
+          aria-expanded={expanded}
+        >
+          {expanded ? "Ver menos" : "Ver más"}
+        </button>
+      )}
     </div>
   );
 }

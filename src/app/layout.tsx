@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
@@ -26,14 +26,22 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es">
-      <body className={`${inter.variable} font-sans antialiased bg-white text-brand-dark`}>
+    <html lang="es" className="overflow-x-hidden">
+      <body
+        className={`${inter.variable} font-sans antialiased bg-white text-brand-dark overflow-x-hidden`}
+      >
         {children}
         <WhatsAppFloat />
       </body>

@@ -141,16 +141,16 @@ export default function SmartChatbox({
               <div className="w-7 h-7 rounded-full bg-brand-blue/10 flex items-center justify-center shrink-0 mt-0.5">
                 <Bot className="w-3.5 h-3.5 text-brand-blue" />
               </div>
-              <div className="bg-white rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm border border-slate-100 max-w-[85%]">
-                <p className="text-sm text-brand-dark/80 leading-relaxed">
+              <div className="bg-white rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm border border-slate-100 max-w-[85%] min-w-0">
+                <p className="text-sm text-brand-dark/80 leading-relaxed break-words">
                   {renderChatRichText(m.content)}
                 </p>
               </div>
             </div>
           ) : (
             <div key={m.id} className="flex justify-end">
-              <div className="bg-brand-blue text-white rounded-2xl rounded-tr-sm px-4 py-3 shadow-sm max-w-[85%]">
-                <p className="text-sm leading-relaxed whitespace-pre-wrap">
+              <div className="bg-brand-blue text-white rounded-2xl rounded-tr-sm px-4 py-3 shadow-sm max-w-[85%] min-w-0">
+                <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
                   {m.content}
                 </p>
               </div>
@@ -181,7 +181,7 @@ export default function SmartChatbox({
           onChange={(e) => setInput(e.target.value)}
           disabled={loading}
           placeholder="Escribe tu pregunta…"
-          className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-brand-dark placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue disabled:opacity-60"
+          className="flex-1 min-w-0 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-brand-dark placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue disabled:opacity-60"
           maxLength={1000}
           autoComplete="off"
         />

@@ -45,8 +45,8 @@ export default function DirectorBioSection() {
         </div>
 
         <div className="lg:col-span-5 order-1 lg:order-2">
-          <div className="relative w-full max-w-sm sm:max-w-md mx-auto flex justify-center items-center">
-            <div className="relative w-full isolate">
+          <div className="relative w-full max-w-sm sm:max-w-md mx-auto flex justify-center items-center overflow-hidden">
+            <div className="relative w-full isolate overflow-hidden">
               <div
                 className="absolute inset-0 z-0 bg-gradient-to-tr from-brand-blue to-brand-dark rounded-3xl opacity-15 scale-105 rotate-1 transition-transform duration-500 hover:rotate-0"
                 aria-hidden="true"

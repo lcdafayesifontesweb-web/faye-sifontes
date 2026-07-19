@@ -22,10 +22,12 @@ export default function CertificationBadge({
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${variants[variant]} ${className}`}
+      className={`inline-flex max-w-full flex-wrap items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${variants[variant]} ${className}`}
     >
       <Award className="w-3.5 h-3.5 text-brand-blue shrink-0" />
-      Certificado por: {certifiedBy}
+      <span className="min-w-0 break-words">
+        Certificado por: {certifiedBy}
+      </span>
     </span>
   );
 }
