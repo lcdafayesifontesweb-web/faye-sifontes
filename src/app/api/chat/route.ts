@@ -1,73 +1,64 @@
 import { NextResponse } from "next/server";
-import type {
-  ChatMessage,
-  ChatRequestBody,
-  CourseChatContext,
-} from "@/types/chat";
+import { client as sanityClient } from "@/sanity/client";
+import type { ChatMessage, ChatRequestBody } from "@/types/chat";
 
 export const runtime = "nodejs";
 
 const MAX_HISTORY = 12;
 const GEMINI_MODEL = "gemini-1.5-flash";
 
+const generalContext =
+  "Empresa: SS Consultores. Directora: Lcda. Faye Sifontes. Sede: CC Centinela PB local 2, Puerto La Cruz, Anzoátegui. Contacto/WhatsApp: 0424-8979101. Alianza institucional: Certificados avalados por EDUCA ante el MPPE solo para Asistente Administrativo, Contable y Excel; el resto son certificados por la Lcda. Faye Sifontes. Métodos de pago: Pago Móvil, Zelle y Efectivo.";
+
 const FALLBACK_REPLY =
   "En este momento nuestro asistente está atendiendo múltiples consultas. Por favor, espera unos segundos o escríbenos directamente por WhatsApp para atención inmediata.";
 
-/** Respuesta 200 que el frontend (SmartChatbox) consume como éxito */
-function okChatMessage(message: string) {
-  return NextResponse.json({ message });
-}
+const COURSE_BY_SLUG_QUERY = `*[_type == "course" && slug.current == $slug][0]{
+  title,
+  description,
+  date,
+  schedule,
+  modality,
+  features,
+  price,
+  currency,
+  certifiedBy,
+  "instructor": instructor->name,
+  gallery
+}`;
 
-interface GeminiContentPart {
-  text: string;
+interface SanityCourseChatData {
+  title?: string;
+  description?: string;
+  date?: string;
+  schedule?: string;
+  modality?: string;
+  features?: string[];
+  price?: number;
+  currency?: string;
+  certifiedBy?: string;
+  instructor?: string | null;
+  gallery?: unknown[];
 }
 
 interface GeminiContent {
   role: "user" | "model";
-  parts: GeminiContentPart[];
-}
-
-interface GeminiGenerateRequest {
-  system_instruction: {
-    parts: GeminiContentPart[];
-  };
-  contents: GeminiContent[];
-  generationConfig?: {
-    temperature?: number;
-    maxOutputTokens?: number;
-  };
+  parts: Array<{ text: string }>;
 }
 
 interface GeminiGenerateResponse {
   candidates?: Array<{
-    content?: {
-      parts?: Array<{ text?: string }>;
-    };
+    content?: { parts?: Array<{ text?: string }> };
   }>;
-  error?: {
-    code?: number;
-    message?: string;
-    status?: string;
-  };
+  error?: { code?: number; message?: string; status?: string };
 }
 
-function isCourseContext(value: unknown): value is CourseChatContext {
-  if (!value || typeof value !== "object") return false;
-  const c = value as Record<string, unknown>;
-  return (
-    typeof c.title === "string" &&
-    typeof c.description === "string" &&
-    typeof c.price === "number" &&
-    typeof c.currency === "string" &&
-    typeof c.modality === "string" &&
-    typeof c.schedule === "string" &&
-    Array.isArray(c.features)
-  );
+function okMessage(message: string) {
+  return NextResponse.json({ message });
 }
 
 function sanitizeMessages(messages: unknown): ChatMessage[] {
   if (!Array.isArray(messages)) return [];
-
   return messages
     .filter((m): m is { role: string; content: string } => {
       if (!m || typeof m !== "object") return false;
@@ -88,11 +79,6 @@ function sanitizeMessages(messages: unknown): ChatMessage[] {
     .slice(-MAX_HISTORY);
 }
 
-function buildSystemPrompt(courseContext: CourseChatContext): string {
-  return `Eres el Asistente Virtual Inteligente de SS Consultores. Tu objetivo es brindar asistencia comercial y académica precisa sobre nuestros cursos. Responde de forma cordial, concisa y persuasiva utilizando ÚNICAMENTE la información contenida en este contexto oficial del curso: ${JSON.stringify(courseContext)}. Reglas de seguridad: 1) Si el usuario pregunta algo que no esté explícitamente en el contexto (ej. descuentos especiales, pagos a plazos no descritos, problemas personales), indícale amablemente que puede consultarlo directamente con nuestro equipo académico haciendo clic en el botón de WhatsApp. 2) No inventes datos, fechas ni tarifas. 3) Mantén respuestas breves (máximo 2 o 3 párrafos cortos).`;
-}
-
-/** Historial UI → contents Gemini (solo user | model) */
 function toGeminiContents(messages: ChatMessage[]): GeminiContent[] {
   return messages.map((msg) => ({
     role: msg.role === "assistant" ? ("model" as const) : ("user" as const),
@@ -100,9 +86,16 @@ function toGeminiContents(messages: ChatMessage[]): GeminiContent[] {
   }));
 }
 
+function buildSystemInstruction(courseData: SanityCourseChatData): string {
+  return `${generalContext}
+
+Estás respondiendo dudas en la página de este curso específico. Basa tus respuestas en estos datos: ${JSON.stringify(courseData)}
+
+Reglas: 1) Usa ÚNICAMENTE la información de empresa (arriba) y del curso activo (courseData). 2) Si preguntan horas, fechas, precio, modalidad, contenido o certificado, responde solo con lo que aparece en courseData. 3) Si no está en el contexto, indica amablemente que contacten por WhatsApp al 0424-8979101. 4) No inventes datos. 5) Respuestas breves (máximo 2-3 párrafos cortos).`;
+}
+
 export async function POST(request: Request) {
   const apiKey = process.env.GEMINI_API_KEY?.trim();
-
   if (!apiKey) {
     console.error("[api/chat] GEMINI_API_KEY ausente o vacía.");
     return NextResponse.json(
@@ -121,9 +114,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
   }
 
-  if (!isCourseContext(body.courseContext)) {
+  const courseSlug =
+    typeof body.courseSlug === "string" ? body.courseSlug.trim() : "";
+  if (!courseSlug) {
     return NextResponse.json(
-      { error: "courseContext incompleto o inválido" },
+      { error: "courseSlug es requerido" },
       { status: 400 }
     );
   }
@@ -139,54 +134,66 @@ export async function POST(request: Request) {
     );
   }
 
-  const systemPrompt = buildSystemPrompt(body.courseContext);
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`;
+  let courseData: SanityCourseChatData | null = null;
+  try {
+    courseData = await sanityClient.fetch<SanityCourseChatData | null>(
+      COURSE_BY_SLUG_QUERY,
+      { slug: courseSlug }
+    );
+  } catch (err) {
+    console.error("[api/chat] Sanity fetch error:", err);
+    return okMessage(FALLBACK_REPLY);
+  }
 
-  const payload: GeminiGenerateRequest = {
-    system_instruction: {
-      parts: [{ text: systemPrompt }],
-    },
-    contents: toGeminiContents(messages),
-    generationConfig: {
-      temperature: 0.4,
-      maxOutputTokens: 512,
-    },
-  };
+  if (!courseData?.title) {
+    console.error("[api/chat] Curso no encontrado para slug:", courseSlug);
+    return NextResponse.json(
+      { error: `No se encontró el curso con slug: ${courseSlug}` },
+      { status: 404 }
+    );
+  }
+
+  const systemPrompt = buildSystemInstruction(courseData);
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`;
 
   try {
     const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       cache: "no-store",
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        system_instruction: {
+          parts: [{ text: systemPrompt }],
+        },
+        contents: toGeminiContents(messages),
+        generationConfig: {
+          temperature: 0.3,
+          maxOutputTokens: 512,
+        },
+      }),
     });
 
-    const data = (await response.json()) as GeminiGenerateResponse;
-
     if (!response.ok) {
-      console.error(
-        "[api/chat] Gemini HTTP error:",
-        response.status,
-        JSON.stringify(data)
-      );
-      // Fallback graceful: no romper la UI (HTTP 200 + message)
-      return okChatMessage(FALLBACK_REPLY);
+      const errText = await response.text();
+      console.error("[GEMINI ERROR]:", errText);
+      return okMessage(FALLBACK_REPLY);
     }
 
+    const data = (await response.json()) as GeminiGenerateResponse;
     const replyText =
       data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
 
     if (!replyText) {
       console.error(
-        "[api/chat] Gemini sin texto en candidates:",
+        "[GEMINI ERROR]: empty candidates",
         JSON.stringify(data)
       );
-      return okChatMessage(FALLBACK_REPLY);
+      return okMessage(FALLBACK_REPLY);
     }
 
-    return okChatMessage(replyText);
+    return okMessage(replyText);
   } catch (err) {
-    console.error("[api/chat] fetch/unexpected:", err);
-    return okChatMessage(FALLBACK_REPLY);
+    console.error("[GEMINI ERROR]:", err);
+    return okMessage(FALLBACK_REPLY);
   }
 }

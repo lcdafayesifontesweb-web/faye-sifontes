@@ -199,18 +199,7 @@ export default function CourseLanding({ course }: CourseLandingProps) {
               <div className="sticky top-24 space-y-6">
                 <SmartChatbox
                   courseSlug={course.slug}
-                  courseContext={{
-                    title: course.title,
-                    description: course.description,
-                    price: course.price,
-                    currency: course.currency,
-                    modality: course.modalityLabel,
-                    schedule: course.schedule,
-                    date: course.date,
-                    features: course.features,
-                    instructorName: course.instructor?.name,
-                    certifiedBy: course.certifiedBy,
-                  }}
+                  courseTitle={course.title}
                 />
 
                 <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">

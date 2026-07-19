@@ -2,11 +2,11 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { Bot, Loader2, Send } from "lucide-react";
-import type { ChatMessage, CourseChatContext } from "@/types/chat";
+import type { ChatMessage } from "@/types/chat";
 
 interface SmartChatboxProps {
   courseSlug: string;
-  courseContext: CourseChatContext;
+  courseTitle: string;
 }
 
 type UiMessage = {
@@ -17,13 +17,13 @@ type UiMessage = {
 
 export default function SmartChatbox({
   courseSlug,
-  courseContext,
+  courseTitle,
 }: SmartChatboxProps) {
   const [messages, setMessages] = useState<UiMessage[]>([
     {
       id: "welcome",
       role: "assistant",
-      content: `¡Hola! Pregúntame lo que necesites sobre ${courseContext.title}: fechas, contenido, modalidad, precio o inscripción.`,
+      content: `¡Hola! Pregúntame lo que necesites sobre ${courseTitle}: fechas, contenido, modalidad, precio o inscripción.`,
     },
   ]);
   const [input, setInput] = useState("");
@@ -31,7 +31,6 @@ export default function SmartChatbox({
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  /** Candado síncrono: evita doble submit antes de que React actualice `loading` */
   const inFlightRef = useRef(false);
 
   useEffect(() => {
@@ -69,7 +68,7 @@ export default function SmartChatbox({
         cache: "no-store",
         body: JSON.stringify({
           messages: payloadMessages,
-          courseContext,
+          courseSlug,
         }),
       });
 
@@ -79,7 +78,6 @@ export default function SmartChatbox({
       };
 
       if (!res.ok || !data.message) {
-        // Sin reintentos automáticos: un solo intento por clic
         throw new Error(
           data.error || "No se pudo obtener respuesta del asistente."
         );
@@ -116,7 +114,7 @@ export default function SmartChatbox({
   return (
     <section
       className="w-full bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden"
-      aria-label={`Asistente Virtual — ${courseContext.title}`}
+      aria-label={`Asistente Virtual — ${courseTitle}`}
       data-course-slug={courseSlug}
     >
       <p className="px-4 pt-4 pb-2 text-sm font-semibold text-brand-blue leading-snug">
@@ -131,7 +129,7 @@ export default function SmartChatbox({
           <p className="font-semibold text-sm leading-tight">
             Asistente Virtual SS Consultores
           </p>
-          <p className="text-xs text-white/70 truncate">{courseContext.title}</p>
+          <p className="text-xs text-white/70 truncate">{courseTitle}</p>
         </div>
       </header>
 
