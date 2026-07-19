@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useMemo, useRef, useState, FormEvent, ChangeEvent } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -12,10 +12,11 @@ import {
   Loader2,
   CreditCard,
   Smartphone,
-  Mail,
-  MessageCircle,
   ChevronRight,
   Star,
+  Upload,
+  FileText,
+  X,
 } from "lucide-react";
 import type { CoursePageData } from "@/sanity/queries";
 import { BRAND } from "@/data/coursesData";
@@ -25,7 +26,15 @@ import CourseGallery from "./CourseGallery";
 import SmartChatbox from "./SmartChatbox";
 import SmartNavLink from "./SmartNavLink";
 
-type PaymentStep = "form" | "payment" | "verifying" | "confirmed";
+type PaymentStep = "form" | "payment" | "success";
+
+const MAX_PROOF_BYTES = 5 * 1024 * 1024;
+const ALLOWED_PROOF_TYPES = new Set([
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "application/pdf",
+]);
 
 interface CourseLandingProps {
   course: CoursePageData;
@@ -41,6 +50,18 @@ export default function CourseLanding({ course }: CourseLandingProps) {
     correo: "",
   });
   const [reference, setReference] = useState("");
+  const [proofFile, setProofFile] = useState<File | null>(null);
+  const [proofError, setProofError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const referenceValid = useMemo(
+    () => /^\d{4,}$/.test(reference.replace(/\s/g, "")),
+    [reference]
+  );
+
+  const canSubmitProof = referenceValid && !!proofFile && !submitting;
 
   const scrollToRegistration = () => {
     document.getElementById("registro")?.scrollIntoView({ behavior: "smooth" });
@@ -52,15 +73,73 @@ export default function CourseLanding({ course }: CourseLandingProps) {
     scrollToRegistration();
   };
 
-  const handlePaymentSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    setStep("verifying");
-    scrollToRegistration();
+  const validateProofFile = (file: File | null): string | null => {
+    if (!file) return "Adjunta el comprobante de pago.";
+    if (!ALLOWED_PROOF_TYPES.has(file.type)) {
+      return "Formato no permitido. Usa JPG, PNG o PDF.";
+    }
+    if (file.size > MAX_PROOF_BYTES) {
+      return "El archivo no puede superar 5 MB.";
+    }
+    return null;
   };
 
-  const handleConfirmPayment = () => {
-    setStep("confirmed");
-    scrollToRegistration();
+  const handleProofChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null;
+    const error = validateProofFile(file);
+    setProofError(error);
+    setProofFile(error ? null : file);
+  };
+
+  const clearProof = () => {
+    setProofFile(null);
+    setProofError(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handlePaymentSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setSubmitError(null);
+
+    const fileError = validateProofFile(proofFile);
+    if (!referenceValid || fileError || !proofFile) {
+      setProofError(fileError);
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const body = new FormData();
+      body.append("studentName", formData.nombre.trim());
+      body.append("idCard", formData.cedula.trim());
+      body.append("phone", formData.telefono.trim());
+      body.append("email", formData.correo.trim());
+      body.append("courseId", course.id);
+      body.append("referenceNumber", reference.replace(/\s/g, ""));
+      body.append("paymentProof", proofFile);
+
+      const res = await fetch("/api/enrollment", {
+        method: "POST",
+        body,
+      });
+      const data = (await res.json()) as { ok?: boolean; error?: string };
+
+      if (!res.ok || !data.ok) {
+        setSubmitError(
+          data.error || "No pudimos registrar tu inscripción. Intenta de nuevo."
+        );
+        return;
+      }
+
+      setStep("success");
+      scrollToRegistration();
+    } catch {
+      setSubmitError(
+        "Error de conexión. Revisa tu internet e intenta nuevamente."
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -230,9 +309,9 @@ export default function CourseLanding({ course }: CourseLandingProps) {
                   <h2 className="text-xl font-bold">Reserva tu lugar</h2>
                   <p className="text-brand-200 text-sm mt-1">
                     {step === "form" && "Completa tus datos para continuar"}
-                    {step === "payment" && "Realiza tu Pago Móvil y envía la referencia"}
-                    {step === "verifying" && "Verificación de pago en proceso"}
-                    {step === "confirmed" && "¡Inscripción confirmada!"}
+                    {step === "payment" &&
+                      "Realiza tu Pago Móvil y envía la referencia"}
+                    {step === "success" && "Inscripción registrada"}
                   </p>
                 </div>
 
@@ -321,87 +400,140 @@ export default function CourseLanding({ course }: CourseLandingProps) {
                         label="Número de referencia"
                         id="referencia"
                         value={reference}
-                        onChange={setReference}
+                        onChange={(v) => {
+                          setReference(v);
+                          setSubmitError(null);
+                        }}
                         placeholder="Ej: 123456789"
                         required
                       />
 
+                      <div>
+                        <label
+                          htmlFor="comprobante"
+                          className="block text-sm font-medium text-slate-700 mb-1.5"
+                        >
+                          Comprobante de pago
+                        </label>
+                        <input
+                          ref={fileInputRef}
+                          id="comprobante"
+                          type="file"
+                          accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
+                          className="sr-only"
+                          onChange={handleProofChange}
+                        />
+                        {!proofFile ? (
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="w-full rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 hover:border-brand-blue hover:bg-brand-50/40 px-4 py-6 text-center transition-colors"
+                          >
+                            <Upload className="w-6 h-6 text-brand-600 mx-auto mb-2" />
+                            <p className="text-sm font-medium text-slate-700">
+                              Sube tu comprobante
+                            </p>
+                            <p className="text-xs text-slate-500 mt-1">
+                              JPG, PNG o PDF · máximo 5 MB
+                            </p>
+                          </button>
+                        ) : (
+                          <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3">
+                            <FileText className="w-5 h-5 text-brand-600 shrink-0" />
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium text-slate-800 truncate">
+                                {proofFile.name}
+                              </p>
+                              <p className="text-xs text-slate-500">
+                                {(proofFile.size / 1024).toFixed(0)} KB
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={clearProof}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                              aria-label="Quitar archivo"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        )}
+                        {proofError && (
+                          <p className="mt-1.5 text-xs text-red-600" role="alert">
+                            {proofError}
+                          </p>
+                        )}
+                      </div>
+
+                      {submitError && (
+                        <p
+                          className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-3 py-2"
+                          role="alert"
+                        >
+                          {submitError}
+                        </p>
+                      )}
+
                       <button
                         type="submit"
-                        className="w-full py-3.5 rounded-xl bg-brand-700 hover:bg-brand-800 text-white font-bold shadow-md transition-all flex items-center justify-center gap-2"
+                        disabled={!canSubmitProof}
+                        aria-busy={submitting}
+                        className="w-full py-3.5 rounded-xl bg-brand-700 hover:bg-brand-800 text-white font-bold shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-brand-700"
                       >
-                        <CreditCard className="w-4 h-4" />
-                        Enviar comprobante
+                        {submitting ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <CreditCard className="w-4 h-4" />
+                        )}
+                        {submitting ? "Enviando…" : "Enviar comprobante"}
                       </button>
 
                       <button
                         type="button"
                         onClick={() => setStep("form")}
-                        className="w-full text-sm text-slate-500 hover:text-slate-700"
+                        disabled={submitting}
+                        className="w-full text-sm text-slate-500 hover:text-slate-700 disabled:opacity-50"
                       >
                         ← Volver al formulario
                       </button>
                     </form>
                   )}
 
-                  {step === "verifying" && (
-                    <div className="text-center py-6">
-                      <Loader2 className="w-12 h-12 text-brand-600 animate-spin mx-auto mb-4" />
-                      <h3 className="font-bold text-slate-900 text-lg mb-2">
-                        Verificación de Pago Móvil en proceso
-                      </h3>
-                      <p className="text-sm text-slate-500 leading-relaxed mb-4">
-                        Estamos validando tu pago. Este proceso puede tomar unos
-                        minutos. Te notificaremos por correo y WhatsApp.
-                      </p>
-                      <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs mb-6">
-                        Ref: {reference || "—"} · Estado: Pendiente de verificación
+                  {step === "success" && (
+                    <div className="py-2 space-y-4">
+                      <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center mx-auto">
+                        <CheckCircle2 className="w-7 h-7 text-green-600" />
                       </div>
-                      <button
-                        type="button"
-                        onClick={handleConfirmPayment}
-                        className="w-full py-3.5 rounded-xl border-2 border-brand-blue bg-brand-blue hover:bg-brand-600 text-white font-bold transition-all"
-                      >
-                        Pago Confirmado
-                      </button>
-                      <p className="text-xs text-slate-400 mt-3">
-                        Simulación admin — confirma el pago manualmente
-                      </p>
-                    </div>
-                  )}
-
-                  {step === "confirmed" && (
-                    <div className="text-center py-6">
-                      <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
-                        <CheckCircle2 className="w-8 h-8 text-green-600" />
-                      </div>
-                      <h3 className="font-bold text-slate-900 text-xl mb-2">
-                        ¡Pago confirmado!
-                      </h3>
-                      <p className="text-sm text-slate-500 leading-relaxed mb-6">
-                        Tu inscripción a <strong>{course.title}</strong> ha sido
-                        procesada exitosamente.
-                      </p>
-
-                      <div className="space-y-3 text-left">
-                        <div className="flex items-center gap-3 p-3 rounded-xl bg-green-50 border border-green-100">
-                          <Mail className="w-5 h-5 text-green-600 shrink-0" />
-                          <p className="text-xs text-green-800">
-                            Credenciales enviadas a{" "}
-                            <strong>{formData.correo || "tu correo"}</strong>
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-3 p-3 rounded-xl bg-green-50 border border-green-100">
-                          <MessageCircle className="w-5 h-5 text-green-600 shrink-0" />
-                          <p className="text-xs text-green-800">
-                            Confirmación por WhatsApp al{" "}
-                            <strong>{formData.telefono || "tu teléfono"}</strong>
-                          </p>
-                        </div>
+                      <div className="text-center space-y-2">
+                        <h3 className="font-bold text-slate-900 text-lg leading-snug">
+                          ¡Inscripción registrada con éxito! Hemos recibido tu
+                          número de referencia y el comprobante de pago.
+                        </h3>
+                        <p className="text-sm text-slate-600 leading-relaxed">
+                          En un plazo máximo de 24 horas laborables nuestro
+                          equipo administrativo verificará la transacción en el
+                          banco. Una vez validada, recibirás automáticamente un
+                          correo electrónico con tus accesos a la clase, el
+                          material descargable y el enlace de ingreso al grupo
+                          oficial de WhatsApp.
+                        </p>
                       </div>
 
-                      <p className="text-xs text-slate-400 mt-6">
-                        (Simulación UI — integración real pendiente)
+                      <div className="rounded-xl border border-brand-blue/30 bg-brand-50 px-4 py-3 text-left">
+                        <p className="text-sm text-brand-dark leading-relaxed">
+                          📌 Nota importante sobre tu correo: Nuestro equipo
+                          administrativo verificará la transacción en el banco
+                          en un plazo máximo de 24 horas laborables. Si al pasar
+                          este tiempo no ves el correo con tus accesos en tu
+                          bandeja de entrada principal, por favor revisa tus
+                          carpetas de Spam, Correo No Deseado o Promociones, y
+                          agrega nuestra dirección corporativa a tus contactos
+                          seguros para no perderte ningún material de la clase.
+                        </p>
+                      </div>
+
+                      <p className="text-xs text-center text-slate-400">
+                        Ref: {reference.replace(/\s/g, "")} · Estado: En Revisión
                       </p>
                     </div>
                   )}
