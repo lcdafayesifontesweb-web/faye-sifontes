@@ -8,8 +8,8 @@ import type {
 export const runtime = "nodejs";
 
 const MAX_HISTORY = 12;
-/** gemini-1.5-flash ya no está disponible (404); flash actual de Google */
-const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.0-flash";
+/** Modelo Flash de cuota gratuita (~15 RPM). Sin reintentos en este route. */
+const GEMINI_MODEL = "gemini-1.5-flash";
 
 function isCourseContext(value: unknown): value is CourseChatContext {
   if (!value || typeof value !== "object") return false;
@@ -106,7 +106,7 @@ export async function POST(request: Request) {
 
   const systemPrompt = buildSystemPrompt(body.courseContext);
 
-  // v1beta + modelo Flash vigente (gemini-1.5-flash devolvía 404)
+  // Una sola petición por request HTTP — sin retries
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
 
   const formattedContents = messages.map((m) => ({
@@ -118,6 +118,7 @@ export async function POST(request: Request) {
     const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      cache: "no-store",
       body: JSON.stringify({
         system_instruction: {
           parts: [{ text: systemPrompt || "Eres un asistente virtual útil." }],

@@ -31,6 +31,8 @@ export default function SmartChatbox({
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  /** Candado síncrono: evita doble submit antes de que React actualice `loading` */
+  const inFlightRef = useRef(false);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -38,9 +40,13 @@ export default function SmartChatbox({
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    const text = input.trim();
-    if (!text || loading) return;
+    e.stopPropagation();
 
+    const text = input.trim();
+    if (!text || loading || inFlightRef.current) return;
+
+    inFlightRef.current = true;
+    setLoading(true);
     setError(null);
     setInput("");
 
@@ -51,7 +57,6 @@ export default function SmartChatbox({
     };
     const nextMessages = [...messages, userMsg];
     setMessages(nextMessages);
-    setLoading(true);
 
     const payloadMessages: ChatMessage[] = nextMessages
       .filter((m) => m.id !== "welcome")
@@ -61,15 +66,20 @@ export default function SmartChatbox({
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        cache: "no-store",
         body: JSON.stringify({
           messages: payloadMessages,
           courseContext,
         }),
       });
 
-      const data = (await res.json()) as { message?: string; error?: string };
+      const data = (await res.json()) as {
+        message?: string;
+        error?: string;
+      };
 
       if (!res.ok || !data.message) {
+        // Sin reintentos automáticos: un solo intento por clic
         throw new Error(
           data.error || "No se pudo obtener respuesta del asistente."
         );
@@ -97,6 +107,7 @@ export default function SmartChatbox({
         },
       ]);
     } finally {
+      inFlightRef.current = false;
       setLoading(false);
       inputRef.current?.focus();
     }
@@ -178,6 +189,7 @@ export default function SmartChatbox({
         <button
           type="submit"
           disabled={loading || !input.trim()}
+          aria-busy={loading}
           className="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-brand-blue text-white hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
           aria-label="Enviar mensaje"
         >
