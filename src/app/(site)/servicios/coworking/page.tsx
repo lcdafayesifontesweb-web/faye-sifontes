@@ -91,7 +91,7 @@ export default function CoworkingPage() {
         <Breadcrumbs
           items={[
             { label: "Inicio", href: "/" },
-            { label: "Servicios", href: "/#servicios" },
+            { label: "Servicios", sectionId: "servicios" },
             { label: "Alquiler de Coworking" },
           ]}
         />

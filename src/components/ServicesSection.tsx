@@ -3,7 +3,7 @@ import { ArrowRight } from "lucide-react";
 
 export default function ServicesSection() {
   return (
-    <section id="servicios" className="bg-white">
+    <section id="servicios" className="bg-white scroll-mt-24">
       {/* Encabezado de sección */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 lg:py-16 text-center">
         <span className="inline-block text-sm font-semibold text-brand-blue uppercase tracking-wider mb-2">

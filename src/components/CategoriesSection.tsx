@@ -1,4 +1,5 @@
-import Link from "next/link";
+"use client";
+
 import {
   Calculator,
   BarChart3,
@@ -8,6 +9,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import type { Category, CourseArea } from "@/data/coursesData";
+import SmartNavLink from "./SmartNavLink";
 
 const iconMap = {
   Calculator,
@@ -27,7 +29,7 @@ export default function CategoriesSection({
   activeCategory = null,
 }: CategoriesSectionProps) {
   return (
-    <section id="categorias" className="py-20 bg-slate-50">
+    <section id="categorias" className="py-20 bg-slate-50 scroll-mt-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-14">
           <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-4">
@@ -45,11 +47,11 @@ export default function CategoriesSection({
             const isActive = activeCategory === cat.id;
 
             return (
-              <Link
+              <SmartNavLink
                 key={cat.id}
-                href={`/?categoria=${cat.id}#cursos`}
-                scroll={false}
-                className={`group relative bg-white rounded-2xl p-6 shadow-sm border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${
+                sectionId="cursos"
+                homeQuery={`?categoria=${cat.id}`}
+                className={`group relative bg-white rounded-2xl p-6 shadow-sm border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl block text-left ${
                   isActive
                     ? "border-brand-500 ring-2 ring-brand-200 shadow-md"
                     : "border-slate-100 hover:border-brand-200"
@@ -78,7 +80,7 @@ export default function CategoriesSection({
                   </span>
                   <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-brand-600 group-hover:translate-x-1 transition-all" />
                 </div>
-              </Link>
+              </SmartNavLink>
             );
           })}
         </div>

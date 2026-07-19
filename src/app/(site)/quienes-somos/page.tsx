@@ -10,6 +10,7 @@ import {
   Award,
 } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import SmartNavLink from "@/components/SmartNavLink";
 import { getWhatsAppUrl } from "@/lib/whatsapp";
 
 export const metadata: Metadata = {
@@ -165,12 +166,12 @@ export default function QuienesSomosPage() {
           </h2>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link
-              href="/#cursos"
+            <SmartNavLink
+              sectionId="cursos"
               className="inline-flex items-center justify-center w-full sm:w-auto px-8 py-3.5 rounded-xl bg-brand-blue hover:bg-brand-600 text-white font-bold shadow-lg transition-all"
             >
               Ver Catálogo de Cursos
-            </Link>
+            </SmartNavLink>
             <Link
               href={whatsappHref}
               target="_blank"

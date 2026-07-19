@@ -87,7 +87,7 @@ export default function ContabilidadPage() {
         <Breadcrumbs
           items={[
             { label: "Inicio", href: "/" },
-            { label: "Servicios", href: "/#servicios" },
+            { label: "Servicios", sectionId: "servicios" },
             { label: "Asesoría Contable" },
           ]}
         />

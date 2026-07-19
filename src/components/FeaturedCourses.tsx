@@ -46,10 +46,14 @@ export default function FeaturedCourses({ courses }: FeaturedCoursesProps) {
 
   useEffect(() => {
     if (!categoriaParam) return;
-    const el = document.getElementById("cursos");
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
+    // Scroll limpio sin hash (el filtro ya está en ?categoria=)
+    const t = window.setTimeout(() => {
+      document.getElementById("cursos")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 50);
+    return () => window.clearTimeout(t);
   }, [categoriaParam]);
 
   const visibleCourses = filtered.slice(0, visibleCount);
@@ -57,7 +61,7 @@ export default function FeaturedCourses({ courses }: FeaturedCoursesProps) {
   const activeLabel = categories.find((c) => c.id === activeCategory)?.name;
 
   const clearFilter = () => {
-    router.push(`${pathname}#cursos`, { scroll: false });
+    router.push(pathname, { scroll: false });
   };
 
   const selectCategory = (id: CourseArea | null) => {
@@ -65,7 +69,7 @@ export default function FeaturedCourses({ courses }: FeaturedCoursesProps) {
       clearFilter();
       return;
     }
-    router.push(`${pathname}?categoria=${id}#cursos`, { scroll: false });
+    router.push(`${pathname}?categoria=${id}`, { scroll: false });
   };
 
   if (courses.length === 0) {

@@ -1,7 +1,10 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
 import { MapPin, Phone, Mail, Instagram } from "lucide-react";
 import { BRAND } from "@/data/coursesData";
+import SmartNavLink from "./SmartNavLink";
 
 export default function Footer() {
   return (
@@ -76,48 +79,67 @@ export default function Footer() {
             </h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/#categorias" className="text-white/70 hover:text-white transition-colors">
+                <SmartNavLink
+                  sectionId="categorias"
+                  className="text-white/70 hover:text-white transition-colors"
+                >
                   Áreas académicas
-                </Link>
+                </SmartNavLink>
               </li>
               <li>
-                <Link href="/servicios/contabilidad" className="text-white/70 hover:text-white transition-colors">
+                <Link
+                  href="/servicios/contabilidad"
+                  className="text-white/70 hover:text-white transition-colors"
+                >
                   Asesoría Contable
                 </Link>
               </li>
               <li>
-                <Link href="/servicios/coworking" className="text-white/70 hover:text-white transition-colors">
+                <Link
+                  href="/servicios/coworking"
+                  className="text-white/70 hover:text-white transition-colors"
+                >
                   Salas de Coworking
                 </Link>
               </li>
               <li>
-                <Link href="/#servicios" className="text-white/70 hover:text-white transition-colors">
+                <SmartNavLink
+                  sectionId="servicios"
+                  className="text-white/70 hover:text-white transition-colors"
+                >
                   Todos los servicios
-                </Link>
+                </SmartNavLink>
               </li>
               <li>
-                <Link href="/#cursos" className="text-white/70 hover:text-white transition-colors">
+                <SmartNavLink
+                  sectionId="cursos"
+                  className="text-white/70 hover:text-white transition-colors"
+                >
                   Cursos destacados
-                </Link>
+                </SmartNavLink>
               </li>
               <li>
-                <Link href="/#instructores" className="text-white/70 hover:text-white transition-colors">
+                <SmartNavLink
+                  sectionId="instructores"
+                  className="text-white/70 hover:text-white transition-colors"
+                >
                   Instructores
-                </Link>
+                </SmartNavLink>
               </li>
               <li>
-                <Link href="/#testimonios" className="text-white/70 hover:text-white transition-colors">
+                <SmartNavLink
+                  sectionId="testimonios"
+                  className="text-white/70 hover:text-white transition-colors"
+                >
                   Testimonios
-                </Link>
+                </SmartNavLink>
               </li>
             </ul>
           </div>
         </div>
 
         <div className="mt-12 pt-8 border-t border-white/10 text-center text-sm text-white/60">
-          <p>
-            © 2026 Lcda. Faye Sifontes. SS Consultores. RIF V147895921
-          </p>
+          <p>© 2026 Lcda. Faye Sifontes. SS Consultores. RIF V147895921</p>
         </div>
       </div>
     </footer>

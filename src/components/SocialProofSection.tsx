@@ -3,7 +3,7 @@ import { testimonials } from "@/data/coursesData";
 
 export default function SocialProofSection() {
   return (
-    <section id="testimonios" className="py-20 bg-white">
+    <section id="testimonios" className="py-20 bg-white scroll-mt-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h2 className="text-3xl sm:text-4xl font-bold text-brand-dark mb-4">

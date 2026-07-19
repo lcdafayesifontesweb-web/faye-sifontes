@@ -4,17 +4,18 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState, useRef, useEffect } from "react";
 import { Menu, X, ChevronDown } from "lucide-react";
+import SmartNavLink from "./SmartNavLink";
 
 const serviceLinks = [
   { href: "/servicios/contabilidad", label: "Asesoría Contable" },
   { href: "/servicios/coworking", label: "Salas de Coworking" },
 ];
 
-const navLinks = [
-  { href: "/#categorias", label: "Áreas" },
-  { href: "/#cursos", label: "Cursos" },
-  { href: "/#instructores", label: "Instructores" },
-  { href: "/#testimonios", label: "Testimonios" },
+const sectionLinks = [
+  { sectionId: "categorias", label: "Áreas" },
+  { sectionId: "cursos", label: "Cursos" },
+  { sectionId: "instructores", label: "Instructores" },
+  { sectionId: "testimonios", label: "Testimonios" },
 ];
 
 export default function Header() {
@@ -35,6 +36,8 @@ export default function Header() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const closeMobile = () => setOpen(false);
 
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-brand-gray/30 shadow-sm">
@@ -66,14 +69,13 @@ export default function Header() {
               Quiénes Somos
             </Link>
 
-            <Link
-              href="/#categorias"
+            <SmartNavLink
+              sectionId="categorias"
               className="text-sm font-medium text-brand-dark/70 hover:text-brand-blue transition-colors"
             >
               Áreas
-            </Link>
+            </SmartNavLink>
 
-            {/* Dropdown Servicios — desktop */}
             <div
               ref={dropdownRef}
               className="relative"
@@ -109,35 +111,35 @@ export default function Header() {
                       </Link>
                     ))}
                     <div className="border-t border-brand-gray/20 mt-1 pt-1">
-                      <Link
-                        href="/#servicios"
+                      <SmartNavLink
+                        sectionId="servicios"
                         className="block px-4 py-3 text-xs text-brand-gray hover:text-brand-blue transition-colors"
-                        onClick={() => setServicesOpen(false)}
+                        onNavigate={() => setServicesOpen(false)}
                       >
                         Ver todos los servicios
-                      </Link>
+                      </SmartNavLink>
                     </div>
                   </div>
                 </div>
               )}
             </div>
 
-            {navLinks.slice(1).map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
+            {sectionLinks.slice(1).map((link) => (
+              <SmartNavLink
+                key={link.sectionId}
+                sectionId={link.sectionId}
                 className="text-sm font-medium text-brand-dark/70 hover:text-brand-blue transition-colors"
               >
                 {link.label}
-              </Link>
+              </SmartNavLink>
             ))}
 
-            <Link
-              href="/#cursos"
+            <SmartNavLink
+              sectionId="cursos"
               className="inline-flex items-center px-5 py-2.5 rounded-full bg-brand-blue hover:bg-brand-600 text-white text-sm font-semibold shadow-md hover:shadow-lg transition-all"
             >
               Ver Cursos
-            </Link>
+            </SmartNavLink>
           </nav>
 
           <button
@@ -155,7 +157,7 @@ export default function Header() {
             <Link
               href="/"
               className="px-3 py-2 rounded-lg text-brand-dark/70 hover:bg-brand-50 hover:text-brand-blue font-medium"
-              onClick={() => setOpen(false)}
+              onClick={closeMobile}
             >
               Inicio
             </Link>
@@ -163,20 +165,19 @@ export default function Header() {
             <Link
               href="/quienes-somos"
               className="px-3 py-2 rounded-lg text-brand-dark/70 hover:bg-brand-50 hover:text-brand-blue font-medium"
-              onClick={() => setOpen(false)}
+              onClick={closeMobile}
             >
               Quiénes Somos
             </Link>
 
-            <Link
-              href="/#categorias"
+            <SmartNavLink
+              sectionId="categorias"
               className="px-3 py-2 rounded-lg text-brand-dark/70 hover:bg-brand-50 hover:text-brand-blue font-medium"
-              onClick={() => setOpen(false)}
+              onNavigate={closeMobile}
             >
               Áreas
-            </Link>
+            </SmartNavLink>
 
-            {/* Servicios — mobile accordion */}
             <div>
               <button
                 type="button"
@@ -198,42 +199,42 @@ export default function Header() {
                       href={link.href}
                       className="px-3 py-2 rounded-lg text-sm text-brand-dark/70 hover:bg-brand-50 hover:text-brand-blue"
                       onClick={() => {
-                        setOpen(false);
+                        closeMobile();
                         setMobileServicesOpen(false);
                       }}
                     >
                       {link.label}
                     </Link>
                   ))}
-                  <Link
-                    href="/#servicios"
+                  <SmartNavLink
+                    sectionId="servicios"
                     className="px-3 py-2 rounded-lg text-xs text-brand-gray hover:text-brand-blue"
-                    onClick={() => setOpen(false)}
+                    onNavigate={closeMobile}
                   >
                     Ver todos
-                  </Link>
+                  </SmartNavLink>
                 </div>
               )}
             </div>
 
-            {navLinks.slice(1).map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
+            {sectionLinks.slice(1).map((link) => (
+              <SmartNavLink
+                key={link.sectionId}
+                sectionId={link.sectionId}
                 className="px-3 py-2 rounded-lg text-brand-dark/70 hover:bg-brand-50 hover:text-brand-blue font-medium"
-                onClick={() => setOpen(false)}
+                onNavigate={closeMobile}
               >
                 {link.label}
-              </Link>
+              </SmartNavLink>
             ))}
 
-            <Link
-              href="/#cursos"
+            <SmartNavLink
+              sectionId="cursos"
               className="mt-2 text-center px-5 py-2.5 rounded-full bg-brand-blue text-white font-semibold"
-              onClick={() => setOpen(false)}
+              onNavigate={closeMobile}
             >
               Ver Cursos
-            </Link>
+            </SmartNavLink>
           </nav>
         )}
       </div>
