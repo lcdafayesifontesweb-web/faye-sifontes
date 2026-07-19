@@ -14,7 +14,7 @@ import {
   Smartphone,
   Mail,
   MessageCircle,
-  ArrowLeft,
+  ChevronRight,
   Star,
 } from "lucide-react";
 import type { CoursePageData } from "@/sanity/queries";
@@ -23,6 +23,7 @@ import { normalizeFeaturesList } from "@/lib/features";
 import CertificationBadge from "./CertificationBadge";
 import CourseGallery from "./CourseGallery";
 import SmartChatbox from "./SmartChatbox";
+import SmartNavLink from "./SmartNavLink";
 
 type PaymentStep = "form" | "payment" | "verifying" | "confirmed";
 
@@ -80,13 +81,34 @@ export default function CourseLanding({ course }: CourseLandingProps) {
         <div className="absolute inset-0 bg-black/50" />
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-white/80 hover:text-white text-sm mb-8 transition-colors"
+          <nav
+            aria-label="Breadcrumb"
+            className="text-sm md:text-base font-medium mb-4 inline-flex flex-wrap items-center gap-x-2 gap-y-1"
           >
-            <ArrowLeft className="w-4 h-4" />
-            Volver al inicio
-          </Link>
+            <Link
+              href="/"
+              className="text-slate-300 hover:text-white transition-colors"
+            >
+              Inicio
+            </Link>
+            <ChevronRight
+              className="w-4 h-4 text-white/40 shrink-0"
+              aria-hidden="true"
+            />
+            <SmartNavLink
+              sectionId="cursos"
+              className="text-slate-300 hover:text-white transition-colors"
+            >
+              Cursos
+            </SmartNavLink>
+            <ChevronRight
+              className="w-4 h-4 text-white/40 shrink-0"
+              aria-hidden="true"
+            />
+            <span className="text-white/90 line-clamp-1 max-w-[min(100%,20rem)] sm:max-w-md">
+              {course.title}
+            </span>
+          </nav>
 
           <div className="grid lg:grid-cols-2 gap-10 items-center">
             <div>
@@ -382,6 +404,24 @@ export default function CourseLanding({ course }: CourseLandingProps) {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section className="px-4 sm:px-6 lg:px-8 pb-20 lg:pb-24">
+        <div className="max-w-5xl mx-auto my-16 p-8 bg-slate-50 md:bg-white rounded-2xl border border-gray-100 shadow-sm text-center">
+          <h3 className="text-2xl font-bold text-brand-dark mb-2">
+            ¿Buscabas otra especialización o diplomado?
+          </h3>
+          <p className="text-gray-600 mb-6 max-w-xl mx-auto">
+            Explora nuestro catálogo académico completo y descubre todas las
+            certificaciones profesionales que tenemos disponibles para ti.
+          </p>
+          <SmartNavLink
+            sectionId="cursos"
+            className="inline-flex items-center justify-center px-8 py-4 text-base font-semibold text-white bg-brand-blue hover:bg-brand-dark rounded-xl shadow-md transition-all duration-300 hover:-translate-y-0.5"
+          >
+            ← Ver todos los cursos
+          </SmartNavLink>
         </div>
       </section>
 
