@@ -8,3 +8,6 @@ node_modules/
 importar-cursos-con-fotos.js
 corregir-ids-cursos.js
 .env.local
+.env*
+ 
+ 
