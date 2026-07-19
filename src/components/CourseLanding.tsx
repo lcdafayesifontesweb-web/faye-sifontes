@@ -33,7 +33,6 @@ const ALLOWED_PROOF_TYPES = new Set([
   "image/jpeg",
   "image/jpg",
   "image/png",
-  "application/pdf",
 ]);
 
 interface CourseLandingProps {
@@ -76,7 +75,7 @@ export default function CourseLanding({ course }: CourseLandingProps) {
   const validateProofFile = (file: File | null): string | null => {
     if (!file) return "Adjunta el comprobante de pago.";
     if (!ALLOWED_PROOF_TYPES.has(file.type)) {
-      return "Formato no permitido. Usa JPG, PNG o PDF.";
+      return "Formato no permitido. Usa JPG o PNG.";
     }
     if (file.size > MAX_PROOF_BYTES) {
       return "El archivo no puede superar 5 MB.";
@@ -419,7 +418,7 @@ export default function CourseLanding({ course }: CourseLandingProps) {
                           ref={fileInputRef}
                           id="comprobante"
                           type="file"
-                          accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
+                          accept=".jpg,.jpeg,.png,image/jpeg,image/png"
                           className="sr-only"
                           onChange={handleProofChange}
                         />
@@ -434,7 +433,7 @@ export default function CourseLanding({ course }: CourseLandingProps) {
                               Sube tu comprobante
                             </p>
                             <p className="text-xs text-slate-500 mt-1">
-                              JPG, PNG o PDF · máximo 5 MB
+                              JPG o PNG · máximo 5 MB
                             </p>
                           </button>
                         ) : (

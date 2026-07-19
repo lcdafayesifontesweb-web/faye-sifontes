@@ -8,8 +8,22 @@ const ALLOWED_MIME = new Set([
   "image/jpeg",
   "image/jpg",
   "image/png",
-  "application/pdf",
 ]);
+
+type EnrollmentCreateDoc = {
+  _type: "enrollment";
+  studentName: string;
+  idCard: string;
+  phone: string;
+  email: string;
+  course: { _type: "reference"; _ref: string };
+  referenceNumber: string;
+  paymentProof: {
+    _type: "image";
+    asset: { _type: "reference"; _ref: string };
+  };
+  status: "pending";
+};
 
 function badRequest(message: string) {
   return NextResponse.json({ error: message }, { status: 400 });
@@ -63,25 +77,21 @@ export async function POST(request: Request) {
 
   const mime = (proof.type || "").toLowerCase();
   if (!ALLOWED_MIME.has(mime)) {
-    return badRequest("Formato no permitido. Usa JPG, PNG o PDF.");
+    return badRequest(
+      "Formato no permitido. Usa una imagen JPG o PNG del comprobante."
+    );
   }
 
   try {
     const buffer = Buffer.from(await proof.arrayBuffer());
-    const isPdf = mime === "application/pdf";
     const contentType = mime === "image/jpg" ? "image/jpeg" : mime;
 
-    const asset = await writeClient.assets.upload(
-      isPdf ? "file" : "image",
-      buffer,
-      {
-        filename:
-          proof.name || (isPdf ? "comprobante.pdf" : "comprobante.jpg"),
-        contentType,
-      }
-    );
+    const asset = await writeClient.assets.upload("image", buffer, {
+      filename: proof.name || "comprobante.jpg",
+      contentType,
+    });
 
-    const doc = await writeClient.create({
+    const enrollmentDoc: EnrollmentCreateDoc = {
       _type: "enrollment",
       studentName,
       idCard,
@@ -92,21 +102,17 @@ export async function POST(request: Request) {
         _ref: courseId,
       },
       referenceNumber: referenceNumber.replace(/\s/g, ""),
-      ...(isPdf
-        ? {
-            paymentProofFile: {
-              _type: "file",
-              asset: { _type: "reference", _ref: asset._id },
-            },
-          }
-        : {
-            paymentProof: {
-              _type: "image",
-              asset: { _type: "reference", _ref: asset._id },
-            },
-          }),
+      paymentProof: {
+        _type: "image",
+        asset: {
+          _type: "reference",
+          _ref: asset._id,
+        },
+      },
       status: "pending",
-    });
+    };
+
+    const doc = await writeClient.create(enrollmentDoc);
 
     return NextResponse.json({
       ok: true,

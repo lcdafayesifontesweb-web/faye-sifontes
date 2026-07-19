@@ -47,22 +47,7 @@ export const enrollment = defineType({
       title: "Comprobante de pago",
       type: "image",
       options: { hotspot: true },
-      validation: (rule) =>
-        rule.custom((value, context) => {
-          const parent = context.parent as {
-            paymentProofFile?: { asset?: unknown };
-          };
-          if (value?.asset || parent?.paymentProofFile?.asset) return true;
-          return "Adjunta el comprobante de pago (imagen o PDF)";
-        }),
-    }),
-    defineField({
-      name: "paymentProofFile",
-      title: "Comprobante (PDF)",
-      type: "file",
-      description:
-        "Se completa automáticamente cuando el alumno sube un PDF desde la web.",
-      hidden: ({ parent }) => !parent?.paymentProofFile,
+      validation: (rule) => rule.required(),
     }),
     defineField({
       name: "status",
