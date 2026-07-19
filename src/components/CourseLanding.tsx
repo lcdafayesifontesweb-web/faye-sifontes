@@ -63,7 +63,10 @@ export default function CourseLanding({ course }: CourseLandingProps) {
   const canSubmitProof = referenceValid && !!proofFile && !submitting;
 
   const scrollToRegistration = () => {
-    document.getElementById("registro")?.scrollIntoView({ behavior: "smooth" });
+    document.getElementById("registro")?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
   };
 
   const handleFormSubmit = (e: FormEvent) => {
@@ -296,7 +299,7 @@ export default function CourseLanding({ course }: CourseLandingProps) {
               )}
             </div>
 
-            <div id="registro" className="lg:col-span-1 min-w-0 max-w-full">
+            <div id="registro" className="lg:col-span-1 min-w-0 max-w-full scroll-mt-24">
               <div className="sticky top-24 space-y-6 min-w-0">
                 <SmartChatbox
                   courseSlug={course.slug}
