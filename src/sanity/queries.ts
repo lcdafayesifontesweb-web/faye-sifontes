@@ -31,7 +31,11 @@ export const INSTRUCTORS_QUERY = `*[_type == "instructor"] | order(name asc) {
   name,
   role,
   bio,
-  photo
+  photo,
+  "courses": *[_type == "course" && references(^._id)] | order(title asc) {
+    title,
+    "slug": slug.current
+  }
 }`;
 
 export const COURSE_BY_SLUG_QUERY = `*[_type == "course" && slug.current == $slug][0] {
@@ -121,8 +125,10 @@ export interface HomeInstructor {
   role: string;
   bio: string;
   photoUrl?: string;
+  photoUrlLarge?: string;
   avatarInitials: string;
   avatarColor: string;
+  courses: { title: string; slug: string }[];
 }
 
 export interface CoursePageInstructor {
@@ -208,8 +214,14 @@ function mapSanityInstructor(
     photoUrl: instructor.photo
       ? urlFor(instructor.photo).width(224).height(224).url()
       : undefined,
+    photoUrlLarge: instructor.photo
+      ? urlFor(instructor.photo).width(480).height(480).url()
+      : undefined,
     avatarInitials: getInitials(instructor.name),
     avatarColor: AVATAR_COLORS[index % AVATAR_COLORS.length],
+    courses: (instructor.courses ?? [])
+      .filter((c) => c?.title && c?.slug)
+      .map((c) => ({ title: c.title, slug: c.slug })),
   };
 }
 

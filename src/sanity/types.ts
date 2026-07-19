@@ -13,6 +13,7 @@ export interface SanityInstructor {
   role: string;
   bio: string;
   photo?: SanityImage;
+  courses?: { title: string; slug: string }[];
 }
 
 export interface SanityCourse {
