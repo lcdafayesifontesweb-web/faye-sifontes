@@ -7,7 +7,7 @@ import {
   Monitor,
   ArrowRight,
 } from "lucide-react";
-import { categories } from "@/data/coursesData";
+import type { Category, CourseArea } from "@/data/coursesData";
 
 const iconMap = {
   Calculator,
@@ -17,7 +17,15 @@ const iconMap = {
   Monitor,
 };
 
-export default function CategoriesSection() {
+interface CategoriesSectionProps {
+  categories: Category[];
+  activeCategory?: CourseArea | null;
+}
+
+export default function CategoriesSection({
+  categories,
+  activeCategory = null,
+}: CategoriesSectionProps) {
   return (
     <section id="categorias" className="py-20 bg-slate-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -34,11 +42,18 @@ export default function CategoriesSection() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {categories.map((cat) => {
             const Icon = iconMap[cat.icon as keyof typeof iconMap];
+            const isActive = activeCategory === cat.id;
+
             return (
               <Link
                 key={cat.id}
-                href={`/#cursos`}
-                className="group relative bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-xl hover:border-brand-200 transition-all duration-300 hover:-translate-y-1"
+                href={`/?categoria=${cat.id}#cursos`}
+                scroll={false}
+                className={`group relative bg-white rounded-2xl p-6 shadow-sm border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${
+                  isActive
+                    ? "border-brand-500 ring-2 ring-brand-200 shadow-md"
+                    : "border-slate-100 hover:border-brand-200"
+                }`}
               >
                 <div
                   className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${cat.color} flex items-center justify-center mb-5 shadow-md group-hover:scale-110 transition-transform`}
@@ -52,7 +67,13 @@ export default function CategoriesSection() {
                   {cat.description}
                 </p>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-brand-600 bg-brand-50 px-3 py-1 rounded-full">
+                  <span
+                    className={`text-xs font-semibold px-3 py-1 rounded-full ${
+                      isActive
+                        ? "text-white bg-brand-600"
+                        : "text-brand-600 bg-brand-50"
+                    }`}
+                  >
                     {cat.courseCount} curso{cat.courseCount !== 1 ? "s" : ""}
                   </span>
                   <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-brand-600 group-hover:translate-x-1 transition-all" />

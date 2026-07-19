@@ -93,6 +93,7 @@ export interface HomeCourse {
   id: string;
   slug: string;
   title: string;
+  category: string;
   shortDescription: string;
   date: string;
   schedule: string;
@@ -175,6 +176,7 @@ function mapSanityCourse(course: SanityCourse): HomeCourse {
     id: course._id,
     slug: course.slug,
     title: course.title,
+    category: course.category,
     shortDescription: course.description,
     date: course.date,
     schedule: course.schedule,

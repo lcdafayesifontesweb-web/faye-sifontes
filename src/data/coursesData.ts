@@ -43,7 +43,7 @@ export const categories: Category[] = [
     name: "Contabilidad y Tributos",
     description: "Nómina, retenciones, conciliaciones y normativa fiscal actualizada.",
     icon: "Calculator",
-    courseCount: 0,
+    courseCount: 0, // se calcula en runtime desde Sanity
     color: "from-blue-600 to-blue-800",
   },
   {
@@ -79,6 +79,26 @@ export const categories: Category[] = [
     color: "from-cyan-600 to-blue-600",
   },
 ];
+
+/** Une metadatos de UI con conteos reales por `category` de Sanity */
+export function categoriesWithCounts(
+  countsByCategory: Record<string, number>
+): Category[] {
+  return categories.map((cat) => ({
+    ...cat,
+    courseCount: countsByCategory[cat.id] ?? 0,
+  }));
+}
+
+export function countCoursesByCategory(
+  courses: { category: string }[]
+): Record<string, number> {
+  return courses.reduce<Record<string, number>>((acc, course) => {
+    if (!course.category) return acc;
+    acc[course.category] = (acc[course.category] ?? 0) + 1;
+    return acc;
+  }, {});
+}
 
 export const testimonials: Testimonial[] = [
   {
