@@ -65,7 +65,7 @@ export default function CourseLanding({ course }: CourseLandingProps) {
   const scrollToRegistration = () => {
     document.getElementById("registro")?.scrollIntoView({
       behavior: "smooth",
-      block: "center",
+      block: "start",
     });
   };
 
@@ -306,15 +306,10 @@ export default function CourseLanding({ course }: CourseLandingProps) {
                   courseTitle={course.title}
                 />
 
-                {/* Ancla invisible ~128px por encima de la tarjeta oscura */}
-                <div className="relative">
-                  <div
-                    id="registro"
-                    className="pointer-events-none absolute bottom-full left-0 h-36 w-full scroll-mt-40"
-                    aria-hidden="true"
-                  />
-
-                  <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden scroll-mt-32">
+                <div
+                  id="registro"
+                  className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden scroll-mt-6"
+                >
                 <div className="bg-brand-dark text-white px-6 py-5">
                   <h2 className="text-xl font-bold">Reserva tu lugar</h2>
                   <p className="text-brand-200 text-sm mt-1">
@@ -549,7 +544,6 @@ export default function CourseLanding({ course }: CourseLandingProps) {
                   )}
                 </div>
               </div>
-                </div>
               </div>
             </div>
           </div>
