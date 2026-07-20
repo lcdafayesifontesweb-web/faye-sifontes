@@ -13,10 +13,7 @@ const ALLOWED_MIME = new Set([
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const ADMIN_EMAILS = [
-  "lcdafayesifontesweb@gmail.com",
-  "sifontessifontesyasociados@gmail.com",
-] as const;
+const ADMIN_EMAILS = ["lcdafayesifontesweb@gmail.com"] as const;
 
 type EnrollmentCreateDoc = {
   _type: "enrollment";
