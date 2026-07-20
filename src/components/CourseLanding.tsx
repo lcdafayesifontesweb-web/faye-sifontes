@@ -118,6 +118,7 @@ export default function CourseLanding({ course }: CourseLandingProps) {
       body.append("email", formData.correo.trim());
       body.append("courseId", course.id);
       body.append("referenceNumber", reference.replace(/\s/g, ""));
+      body.append("monto", `$${course.price} ${course.currency}`);
       body.append("paymentProof", proofFile);
 
       const res = await fetch("/api/enrollment", {
