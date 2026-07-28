@@ -293,7 +293,7 @@ export default function CourseLanding({ course }: CourseLandingProps) {
                 </p>
                 {selectedBs != null ? (
                   <p className="text-sm text-white/70 mt-1">
-                    Aprox. Bs. {formatBs(selectedBs)}
+                    Bs. {formatBs(selectedBs)}
                   </p>
                 ) : (
                   <p className="text-sm text-white/60 mt-1">{course.currency}</p>
@@ -429,7 +429,7 @@ export default function CourseLanding({ course }: CourseLandingProps) {
                           {selectedBs != null && (
                             <span className="font-bold text-brand-700">
                               {" "}
-                              | Aprox. Bs. {formatBs(selectedBs)}
+                              | Bs. {formatBs(selectedBs)}
                             </span>
                           )}
                         </p>
