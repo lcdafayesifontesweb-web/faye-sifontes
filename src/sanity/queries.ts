@@ -14,6 +14,7 @@ export const ALL_COURSES_QUERY = `*[_type == "course"] | order(_createdAt desc) 
   modality,
   features,
   price,
+  priceOnline,
   currency,
   featured,
   certifiedBy,
@@ -50,6 +51,7 @@ export const COURSE_BY_SLUG_QUERY = `*[_type == "course" && slug.current == $slu
   modality,
   features,
   price,
+  priceOnline,
   currency,
   featured,
   certifiedBy,
@@ -105,6 +107,7 @@ export interface HomeCourse {
   modalityLabel: string;
   features: string[];
   price: number;
+  priceOnline: number;
   currency: string;
   featured: boolean;
   imageGradient: string;
@@ -152,6 +155,7 @@ export interface CoursePageData {
   modalityLabel: string;
   features: string[];
   price: number;
+  priceOnline: number;
   currency: string;
   featured: boolean;
   imageGradient: string;
@@ -190,6 +194,7 @@ function mapSanityCourse(course: SanityCourse): HomeCourse {
     modalityLabel: MODALITY_LABELS[course.modality] ?? course.modality,
     features: normalizeFeaturesList(course.features),
     price: course.price ?? 0,
+    priceOnline: course.priceOnline ?? 0,
     currency: course.currency ?? "USD",
     featured: course.featured ?? false,
     imageGradient:
@@ -254,6 +259,7 @@ function mapSanityCoursePage(course: SanityCourse): CoursePageData {
     modalityLabel: MODALITY_LABELS[course.modality] ?? course.modality,
     features: normalizeFeaturesList(course.features),
     price: course.price ?? 0,
+    priceOnline: course.priceOnline ?? 0,
     currency: course.currency ?? "USD",
     featured: course.featured ?? false,
     imageGradient:

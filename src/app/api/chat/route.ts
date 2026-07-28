@@ -22,6 +22,7 @@ const COURSE_BY_SLUG_QUERY = `*[_type == "course" && slug.current == $slug][0]{
   modality,
   features,
   price,
+  priceOnline,
   currency,
   certifiedBy,
   "instructor": instructor->name,
@@ -36,6 +37,7 @@ interface SanityCourseChatData {
   modality?: string;
   features?: string | string[];
   price?: number;
+  priceOnline?: number;
   currency?: string;
   certifiedBy?: string;
   instructor?: string | null;

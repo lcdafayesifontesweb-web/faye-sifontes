@@ -126,8 +126,16 @@ export const course = defineType({
     }),
     defineField({
       name: "price",
-      title: "Precio",
+      title: "Precio presencial",
       type: "number",
+      description: "Inversión modalidad presencial (USD)",
+      validation: (rule) => rule.required().min(0),
+    }),
+    defineField({
+      name: "priceOnline",
+      title: "Precio online",
+      type: "number",
+      description: "Inversión modalidad online / Zoom (USD)",
       validation: (rule) => rule.required().min(0),
     }),
     defineField({

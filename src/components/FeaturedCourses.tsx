@@ -217,8 +217,10 @@ function CourseCard({ course }: { course: HomeCourse }) {
           ) : (
             <span />
           )}
-          <span className="text-white/90 text-sm font-bold">
-            ${course.price} {course.currency}
+          <span className="text-white/90 text-xs sm:text-sm font-bold text-right leading-tight">
+            Online ${course.priceOnline}
+            <br />
+            Presencial ${course.price}
           </span>
         </div>
         <h3 className="relative text-lg font-bold text-white leading-snug pr-2 line-clamp-3">

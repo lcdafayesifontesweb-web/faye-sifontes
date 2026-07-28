@@ -27,7 +27,10 @@ export interface SanityCourse {
   modality: string;
   /** Legado: string[]; nuevo: texto multilínea */
   features?: string | string[];
+  /** Precio modalidad presencial */
   price?: number;
+  /** Precio modalidad online / Zoom */
+  priceOnline?: number;
   currency?: string;
   featured?: boolean;
   certifiedBy?: string;

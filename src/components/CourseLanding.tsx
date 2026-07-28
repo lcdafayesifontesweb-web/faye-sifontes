@@ -118,7 +118,10 @@ export default function CourseLanding({ course }: CourseLandingProps) {
       body.append("email", formData.correo.trim());
       body.append("courseId", course.id);
       body.append("referenceNumber", reference.replace(/\s/g, ""));
-      body.append("monto", `$${course.price} ${course.currency}`);
+      body.append(
+        "monto",
+        `Online $${course.priceOnline} / Presencial $${course.price} ${course.currency}`
+      );
       body.append("paymentProof", proofFile);
 
       const res = await fetch("/api/enrollment", {
@@ -234,13 +237,22 @@ export default function CourseLanding({ course }: CourseLandingProps) {
                 <FichaItem icon={User} label="Facilitador" value={instructor.name} />
               )}
               <div className="pt-4 border-t border-white/20 min-w-0">
-                <p className="text-white/70 text-sm">Inversión</p>
-                <p className="text-3xl sm:text-4xl font-extrabold text-brand-300 break-words">
-                  ${course.price}{" "}
-                  <span className="text-lg font-medium text-white/80">
-                    {course.currency}
-                  </span>
-                </p>
+                <p className="text-white/70 text-sm mb-2">Inversión</p>
+                <div className="space-y-1.5">
+                  <p className="text-2xl sm:text-3xl font-extrabold text-brand-300 break-words">
+                    ${course.priceOnline}{" "}
+                    <span className="text-base font-medium text-white/80">
+                      Online
+                    </span>
+                  </p>
+                  <p className="text-2xl sm:text-3xl font-extrabold text-brand-300 break-words">
+                    ${course.price}{" "}
+                    <span className="text-base font-medium text-white/80">
+                      Presencial
+                    </span>
+                  </p>
+                  <p className="text-sm text-white/60">{course.currency}</p>
+                </div>
               </div>
             </div>
           </div>
@@ -395,8 +407,10 @@ export default function CourseLanding({ course }: CourseLandingProps) {
                           </div>
                           <div className="flex justify-between gap-3 border-t border-slate-200 pt-2 mt-2">
                             <dt className="text-slate-500 shrink-0">Monto</dt>
-                            <dd className="font-bold text-brand-700 min-w-0 text-right">
-                              ${course.price} {course.currency}
+                            <dd className="font-bold text-brand-700 min-w-0 text-right text-sm leading-snug">
+                              Online ${course.priceOnline}
+                              <br />
+                              Presencial ${course.price} {course.currency}
                             </dd>
                           </div>
                         </dl>
@@ -576,7 +590,8 @@ export default function CourseLanding({ course }: CourseLandingProps) {
             onClick={scrollToRegistration}
             className="block w-full text-center py-3.5 rounded-xl bg-brand-blue text-white font-bold cta-pulse"
           >
-            Reserva tu lugar — ${course.price}
+            Reserva tu lugar — Online ${course.priceOnline} / Presencial $
+            {course.price}
           </button>
         </div>
       )}
