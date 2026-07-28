@@ -35,7 +35,8 @@ function getFromAddress(): string {
 }
 
 function getLogoUrl(siteOrigin: string): string {
-  return `${siteOrigin.replace(/\/$/, "")}/logofaye.png`;
+  // Logo claro: el encabezado del correo es fondo oscuro (#071b43)
+  return `${siteOrigin.replace(/\/$/, "")}/logoblanco.png`;
 }
 
 function getPlaceLabel(modality?: string): string {
@@ -284,19 +285,16 @@ async function sendEmail(params: {
   }
 }
 
-export function resolveSiteOrigin(requestUrl?: string): string {
-  const envUrl =
-    process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "");
+const DEFAULT_SITE_ORIGIN = "https://www.lcdafayesifontes.com";
+
+export function resolveSiteOrigin(_requestUrl?: string): string {
+  // Siempre preferir el dominio público. Nunca usar VERCEL_URL en correos:
+  // en previews es una URL efímera (*.vercel.app) que rompe el botón y el logo.
+  // Usar www: el apex redirige con 308 y muchos clientes de correo no siguen
+  // redirects en <img>, lo que deja el logo roto.
+  const envUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
   if (envUrl) return envUrl.replace(/\/$/, "");
-  if (requestUrl) {
-    try {
-      return new URL(requestUrl).origin;
-    } catch {
-      /* ignore */
-    }
-  }
-  return "http://localhost:3000";
+  return DEFAULT_SITE_ORIGIN;
 }
 
 export async function notifyAdminsNewEnrollment(params: {
