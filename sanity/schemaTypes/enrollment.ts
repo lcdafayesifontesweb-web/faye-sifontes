@@ -63,6 +63,16 @@ export const enrollment = defineType({
       },
       initialValue: "pending",
       validation: (rule) => rule.required(),
+      description:
+        "Preferible usar los botones «Confirmar pago y notificar» / «Rechazar y notificar» arriba a la derecha para avisar al alumno por correo.",
+    }),
+    defineField({
+      name: "statusEmailSent",
+      title: "Último correo de estado enviado",
+      type: "string",
+      readOnly: true,
+      hidden: true,
+      description: "Evita reenviar el mismo correo de confirmación/rechazo.",
     }),
   ],
   preview: {
