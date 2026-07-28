@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState, FormEvent, ChangeEvent } from "react";
+import { useEffect, useMemo, useRef, useState, FormEvent, ChangeEvent } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -21,6 +21,11 @@ import {
 import type { CoursePageData } from "@/sanity/queries";
 import { BRAND } from "@/data/coursesData";
 import { normalizeFeaturesList } from "@/lib/features";
+import {
+  formatBs,
+  usdToBs,
+  type TasaResponse,
+} from "@/lib/tasa";
 import CertificationBadge from "./CertificationBadge";
 import CourseGallery from "./CourseGallery";
 import SmartChatbox from "./SmartChatbox";
@@ -53,6 +58,8 @@ export default function CourseLanding({ course }: CourseLandingProps) {
   const [proofError, setProofError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [tasaData, setTasaData] = useState<TasaResponse | null>(null);
+  const [tasaError, setTasaError] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const referenceValid = useMemo(
@@ -61,6 +68,36 @@ export default function CourseLanding({ course }: CourseLandingProps) {
   );
 
   const canSubmitProof = referenceValid && !!proofFile && !submitting;
+
+  const bsOnline = useMemo(() => {
+    if (!tasaData) return null;
+    return usdToBs(course.priceOnline, tasaData.tasa);
+  }, [tasaData, course.priceOnline]);
+
+  const bsPresencial = useMemo(() => {
+    if (!tasaData) return null;
+    return usdToBs(course.price, tasaData.tasa);
+  }, [tasaData, course.price]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/tasa");
+        if (!res.ok) throw new Error("tasa_fail");
+        const data = (await res.json()) as TasaResponse;
+        if (!cancelled && Number.isFinite(data.tasa)) {
+          setTasaData(data);
+          setTasaError(false);
+        }
+      } catch {
+        if (!cancelled) setTasaError(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const scrollToRegistration = () => {
     document.getElementById("registro")?.scrollIntoView({
@@ -120,7 +157,9 @@ export default function CourseLanding({ course }: CourseLandingProps) {
       body.append("referenceNumber", reference.replace(/\s/g, ""));
       body.append(
         "monto",
-        `Online $${course.priceOnline} / Presencial $${course.price} ${course.currency}`
+        bsOnline != null && bsPresencial != null && tasaData
+          ? `Online $${course.priceOnline} (Bs. ${formatBs(bsOnline)}) / Presencial $${course.price} (Bs. ${formatBs(bsPresencial)}) · Tasa BCV ${formatBs(tasaData.tasa)} (${tasaData.ultimaActualizacion})`
+          : `Online $${course.priceOnline} / Presencial $${course.price} ${course.currency}`
       );
       body.append("paymentProof", proofFile);
 
@@ -408,12 +447,49 @@ export default function CourseLanding({ course }: CourseLandingProps) {
                           <div className="flex justify-between gap-3 border-t border-slate-200 pt-2 mt-2">
                             <dt className="text-slate-500 shrink-0">Monto</dt>
                             <dd className="font-bold text-brand-700 min-w-0 text-right text-sm leading-snug">
-                              Online ${course.priceOnline}
-                              <br />
-                              Presencial ${course.price} {course.currency}
+                              <span className="block">
+                                Online ${course.priceOnline}
+                                {bsOnline != null && (
+                                  <>
+                                    <br />
+                                    <span className="text-brand-800">
+                                      Bs. {formatBs(bsOnline)}
+                                    </span>
+                                  </>
+                                )}
+                              </span>
+                              <span className="block mt-2">
+                                Presencial ${course.price} {course.currency}
+                                {bsPresencial != null && (
+                                  <>
+                                    <br />
+                                    <span className="text-brand-800">
+                                      Bs. {formatBs(bsPresencial)}
+                                    </span>
+                                  </>
+                                )}
+                              </span>
                             </dd>
                           </div>
                         </dl>
+                        {tasaData ? (
+                          <p className="mt-3 inline-flex w-full items-start gap-1.5 rounded-lg border border-brand-200 bg-brand-50/80 px-3 py-2 text-xs leading-snug text-slate-600">
+                            <span aria-hidden="true">⚡</span>
+                            <span>
+                              Tasa oficial BCV (Bs. {formatBs(tasaData.tasa)}) —
+                              Última actualización:{" "}
+                              <span className="font-medium text-slate-700">
+                                {tasaData.ultimaActualizacion}
+                              </span>
+                            </span>
+                          </p>
+                        ) : (
+                          <p className="mt-3 text-xs text-slate-500">
+                            {tasaError
+                              ? "No se pudo cargar la tasa BCV. Puedes pagar con el monto en USD y te confirmamos el equivalente."
+                              : "Consultando tasa oficial BCV…"}
+                          </p>
+                        )}
                       </div>
 
                       <FormField

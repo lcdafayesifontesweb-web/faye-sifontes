@@ -31,9 +31,9 @@ export const BRAND = {
   phone: "0424-8979101",
   email: "sifontessifontesyasociados@gmail.com",
   pagoMovil: {
-    banco: "Banesco",
-    telefono: "0424-8979101",
-    cedula: "V-12.345.678",
+    banco: "Bancaribe",
+    telefono: "04148377165",
+    cedula: "14.789.592",
   },
 };
 
