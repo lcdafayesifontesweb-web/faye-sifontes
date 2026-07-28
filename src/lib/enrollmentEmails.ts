@@ -100,6 +100,7 @@ export function buildAdminPendingHtml(params: {
   email: string;
   referenceNumber: string;
   monto: string;
+  modalityLabel?: string;
   studioUrl: string;
   logoUrl: string;
 }): string {
@@ -110,6 +111,7 @@ export function buildAdminPendingHtml(params: {
     email,
     referenceNumber,
     monto,
+    modalityLabel,
     studioUrl,
     logoUrl,
   } = params;
@@ -127,8 +129,9 @@ export function buildAdminPendingHtml(params: {
         ${detailRow("Cédula", idCard)}
         ${detailRow("Teléfono", phone, true)}
         ${detailRow("Correo", email)}
-        ${detailRow("Número de Referencia", referenceNumber, true)}
-        ${detailRow("Monto pagado", monto)}
+        ${modalityLabel ? detailRow("Modalidad", modalityLabel, true) : ""}
+        ${detailRow("Número de Referencia", referenceNumber, !modalityLabel)}
+        ${detailRow("Monto pagado", monto, Boolean(modalityLabel))}
       </table>
       <table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px auto 0;">
         <tr>
@@ -314,6 +317,7 @@ export async function notifyAdminsNewEnrollment(params: {
   email: string;
   referenceNumber: string;
   monto: string;
+  modalityLabel?: string;
   siteOrigin: string;
 }): Promise<SendEmailResult> {
   const logoUrl = getLogoUrl(params.siteOrigin);

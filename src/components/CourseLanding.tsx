@@ -32,6 +32,7 @@ import SmartChatbox from "./SmartChatbox";
 import SmartNavLink from "./SmartNavLink";
 
 type PaymentStep = "form" | "payment" | "success";
+type PurchaseModality = "online" | "presencial";
 
 const MAX_PROOF_BYTES = 5 * 1024 * 1024;
 const ALLOWED_PROOF_TYPES = new Set([
@@ -47,6 +48,7 @@ interface CourseLandingProps {
 export default function CourseLanding({ course }: CourseLandingProps) {
   const instructor = course.instructor;
   const [step, setStep] = useState<PaymentStep>("form");
+  const [modality, setModality] = useState<PurchaseModality>("online");
   const [formData, setFormData] = useState({
     nombre: "",
     cedula: "",
@@ -69,15 +71,16 @@ export default function CourseLanding({ course }: CourseLandingProps) {
 
   const canSubmitProof = referenceValid && !!proofFile && !submitting;
 
-  const bsOnline = useMemo(() => {
-    if (!tasaData) return null;
-    return usdToBs(course.priceOnline, tasaData.tasa);
-  }, [tasaData, course.priceOnline]);
+  const selectedUsd =
+    modality === "online" ? course.priceOnline : course.price;
 
-  const bsPresencial = useMemo(() => {
+  const selectedBs = useMemo(() => {
     if (!tasaData) return null;
-    return usdToBs(course.price, tasaData.tasa);
-  }, [tasaData, course.price]);
+    return usdToBs(selectedUsd, tasaData.tasa);
+  }, [tasaData, selectedUsd]);
+
+  const modalityLabel =
+    modality === "online" ? "Online" : "Presencial";
 
   useEffect(() => {
     let cancelled = false;
@@ -154,12 +157,17 @@ export default function CourseLanding({ course }: CourseLandingProps) {
       body.append("phone", formData.telefono.trim());
       body.append("email", formData.correo.trim());
       body.append("courseId", course.id);
+      body.append("paymentModality", modality);
+      body.append("amountUsd", String(selectedUsd));
+      if (selectedBs != null) {
+        body.append("amountBs", String(selectedBs));
+      }
       body.append("referenceNumber", reference.replace(/\s/g, ""));
       body.append(
         "monto",
-        bsOnline != null && bsPresencial != null && tasaData
-          ? `Online $${course.priceOnline} (Bs. ${formatBs(bsOnline)}) / Presencial $${course.price} (Bs. ${formatBs(bsPresencial)}) · Tasa BCV ${formatBs(tasaData.tasa)} (${tasaData.ultimaActualizacion})`
-          : `Online $${course.priceOnline} / Presencial $${course.price} ${course.currency}`
+        selectedBs != null && tasaData
+          ? `${modalityLabel} $${selectedUsd} USD | Bs. ${formatBs(selectedBs)} · Tasa BCV ${formatBs(tasaData.tasa)} (${tasaData.ultimaActualizacion})`
+          : `${modalityLabel} $${selectedUsd} ${course.currency}`
       );
       body.append("paymentProof", proofFile);
 
@@ -277,21 +285,19 @@ export default function CourseLanding({ course }: CourseLandingProps) {
               )}
               <div className="pt-4 border-t border-white/20 min-w-0">
                 <p className="text-white/70 text-sm mb-2">Inversión</p>
-                <div className="space-y-1.5">
-                  <p className="text-2xl sm:text-3xl font-extrabold text-brand-300 break-words">
-                    ${course.priceOnline}{" "}
-                    <span className="text-base font-medium text-white/80">
-                      Online
-                    </span>
+                <p className="text-2xl sm:text-3xl font-extrabold text-brand-300 break-words transition-all duration-300">
+                  ${selectedUsd}{" "}
+                  <span className="text-base font-medium text-white/80">
+                    {modalityLabel}
+                  </span>
+                </p>
+                {selectedBs != null ? (
+                  <p className="text-sm text-white/70 mt-1">
+                    Aprox. Bs. {formatBs(selectedBs)}
                   </p>
-                  <p className="text-2xl sm:text-3xl font-extrabold text-brand-300 break-words">
-                    ${course.price}{" "}
-                    <span className="text-base font-medium text-white/80">
-                      Presencial
-                    </span>
-                  </p>
-                  <p className="text-sm text-white/60">{course.currency}</p>
-                </div>
+                ) : (
+                  <p className="text-sm text-white/60 mt-1">{course.currency}</p>
+                )}
               </div>
             </div>
           </div>
@@ -373,6 +379,82 @@ export default function CourseLanding({ course }: CourseLandingProps) {
                 </div>
 
                 <div className="p-6">
+                  {(step === "form" || step === "payment") && (
+                    <div className="mb-5">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">
+                        Elige tu modalidad
+                      </p>
+                      <div
+                        role="tablist"
+                        aria-label="Modalidad de inscripción"
+                        className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-slate-100"
+                      >
+                        <button
+                          type="button"
+                          role="tab"
+                          aria-selected={modality === "online"}
+                          onClick={() => setModality("online")}
+                          className={`rounded-lg px-3 py-2.5 text-sm font-semibold transition-all duration-200 ${
+                            modality === "online"
+                              ? "bg-brand-blue text-white shadow-sm"
+                              : "bg-transparent text-slate-600 hover:bg-white/70"
+                          }`}
+                        >
+                          💻 Online
+                        </button>
+                        <button
+                          type="button"
+                          role="tab"
+                          aria-selected={modality === "presencial"}
+                          onClick={() => setModality("presencial")}
+                          className={`rounded-lg px-3 py-2.5 text-sm font-semibold transition-all duration-200 ${
+                            modality === "presencial"
+                              ? "bg-brand-blue text-white shadow-sm"
+                              : "bg-transparent text-slate-600 hover:bg-white/70"
+                          }`}
+                        >
+                          🏢 Presencial
+                        </button>
+                      </div>
+
+                      <div
+                        key={modality}
+                        className="mt-4 rounded-xl border border-brand-100 bg-brand-50/50 px-4 py-3 transition-all duration-300"
+                      >
+                        <p className="text-xs font-medium text-slate-500 mb-1">
+                          Inversión {modalityLabel}
+                        </p>
+                        <p className="text-lg font-extrabold text-brand-800 leading-snug">
+                          ${selectedUsd} USD
+                          {selectedBs != null && (
+                            <span className="font-bold text-brand-700">
+                              {" "}
+                              | Aprox. Bs. {formatBs(selectedBs)}
+                            </span>
+                          )}
+                        </p>
+                        {tasaData ? (
+                          <p className="mt-2 inline-flex w-full items-start gap-1.5 rounded-lg border border-brand-200 bg-white px-2.5 py-2 text-xs leading-snug text-slate-600">
+                            <span aria-hidden="true">⚡</span>
+                            <span>
+                              Tasa oficial BCV (Bs. {formatBs(tasaData.tasa)}) —
+                              Última actualización:{" "}
+                              <span className="font-medium text-slate-700">
+                                {tasaData.ultimaActualizacion}
+                              </span>
+                            </span>
+                          </p>
+                        ) : (
+                          <p className="mt-2 text-xs text-slate-500">
+                            {tasaError
+                              ? "No se pudo cargar la tasa BCV en este momento."
+                              : "Consultando tasa oficial BCV…"}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   {step === "form" && (
                     <form onSubmit={handleFormSubmit} className="space-y-4">
                       <FormField
@@ -444,52 +526,27 @@ export default function CourseLanding({ course }: CourseLandingProps) {
                               {BRAND.pagoMovil.cedula}
                             </dd>
                           </div>
+                          <div className="flex justify-between gap-3">
+                            <dt className="text-slate-500 shrink-0">Modalidad</dt>
+                            <dd className="font-medium min-w-0 text-right break-words">
+                              {modalityLabel}
+                            </dd>
+                          </div>
                           <div className="flex justify-between gap-3 border-t border-slate-200 pt-2 mt-2">
                             <dt className="text-slate-500 shrink-0">Monto</dt>
                             <dd className="font-bold text-brand-700 min-w-0 text-right text-sm leading-snug">
-                              <span className="block">
-                                Online ${course.priceOnline}
-                                {bsOnline != null && (
-                                  <>
-                                    <br />
-                                    <span className="text-brand-800">
-                                      Bs. {formatBs(bsOnline)}
-                                    </span>
-                                  </>
-                                )}
-                              </span>
-                              <span className="block mt-2">
-                                Presencial ${course.price} {course.currency}
-                                {bsPresencial != null && (
-                                  <>
-                                    <br />
-                                    <span className="text-brand-800">
-                                      Bs. {formatBs(bsPresencial)}
-                                    </span>
-                                  </>
-                                )}
-                              </span>
+                              ${selectedUsd} USD
+                              {selectedBs != null && (
+                                <>
+                                  <br />
+                                  <span className="text-brand-800">
+                                    Bs. {formatBs(selectedBs)}
+                                  </span>
+                                </>
+                              )}
                             </dd>
                           </div>
                         </dl>
-                        {tasaData ? (
-                          <p className="mt-3 inline-flex w-full items-start gap-1.5 rounded-lg border border-brand-200 bg-brand-50/80 px-3 py-2 text-xs leading-snug text-slate-600">
-                            <span aria-hidden="true">⚡</span>
-                            <span>
-                              Tasa oficial BCV (Bs. {formatBs(tasaData.tasa)}) —
-                              Última actualización:{" "}
-                              <span className="font-medium text-slate-700">
-                                {tasaData.ultimaActualizacion}
-                              </span>
-                            </span>
-                          </p>
-                        ) : (
-                          <p className="mt-3 text-xs text-slate-500">
-                            {tasaError
-                              ? "No se pudo cargar la tasa BCV. Puedes pagar con el monto en USD y te confirmamos el equivalente."
-                              : "Consultando tasa oficial BCV…"}
-                          </p>
-                        )}
                       </div>
 
                       <FormField
@@ -666,8 +723,8 @@ export default function CourseLanding({ course }: CourseLandingProps) {
             onClick={scrollToRegistration}
             className="block w-full text-center py-3.5 rounded-xl bg-brand-blue text-white font-bold cta-pulse"
           >
-            Reserva tu lugar — Online ${course.priceOnline} / Presencial $
-            {course.price}
+            Reserva tu lugar — ${selectedUsd} {modalityLabel}
+            {selectedBs != null ? ` | Bs. ${formatBs(selectedBs)}` : ""}
           </button>
         </div>
       )}

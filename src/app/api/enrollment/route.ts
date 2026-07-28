@@ -18,6 +18,10 @@ type EnrollmentCreateDoc = {
   phone: string;
   email: string;
   course: { _type: "reference"; _ref: string };
+  paymentModality: "online" | "presencial";
+  amountUsd: number;
+  amountBs?: number;
+  monto: string;
   referenceNumber: string;
   paymentProof: {
     _type: "image";
@@ -60,6 +64,15 @@ export async function POST(request: Request) {
   const referenceNumber = String(form.get("referenceNumber") ?? "").trim();
   const montoRaw = String(form.get("monto") ?? "").trim();
   const monto = montoRaw || "$0 USD";
+  const modalityRaw = String(form.get("paymentModality") ?? "").trim();
+  const paymentModality =
+    modalityRaw === "presencial" ? "presencial" : "online";
+  const amountUsd = Number(form.get("amountUsd"));
+  const amountBsRaw = form.get("amountBs");
+  const amountBs =
+    amountBsRaw != null && String(amountBsRaw).trim() !== ""
+      ? Number(amountBsRaw)
+      : undefined;
   const proof = form.get("paymentProof");
 
   if (!studentName || !idCard || !phone || !email) {
@@ -67,6 +80,12 @@ export async function POST(request: Request) {
   }
   if (!courseId) {
     return badRequest("Falta el curso de la inscripción.");
+  }
+  if (modalityRaw !== "online" && modalityRaw !== "presencial") {
+    return badRequest("Selecciona la modalidad Online o Presencial.");
+  }
+  if (!Number.isFinite(amountUsd) || amountUsd < 0) {
+    return badRequest("Monto USD inválido.");
   }
   if (!/^\d{4,}$/.test(referenceNumber.replace(/\s/g, ""))) {
     return badRequest("Ingresa un número de referencia válido (solo dígitos).");
@@ -104,6 +123,10 @@ export async function POST(request: Request) {
         _type: "reference",
         _ref: courseId,
       },
+      paymentModality,
+      amountUsd,
+      ...(Number.isFinite(amountBs) ? { amountBs: amountBs as number } : {}),
+      monto,
       referenceNumber: referenceNumber.replace(/\s/g, ""),
       paymentProof: {
         _type: "image",
@@ -139,6 +162,8 @@ export async function POST(request: Request) {
         email: email.toLowerCase(),
         referenceNumber: referenceNumber.replace(/\s/g, ""),
         monto,
+        modalityLabel:
+          paymentModality === "online" ? "Online" : "Presencial",
         siteOrigin,
       }),
       notifyStudentReceived({
