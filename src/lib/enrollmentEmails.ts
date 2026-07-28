@@ -3,7 +3,7 @@ import { BRAND } from "@/data/coursesData";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-export const ADMIN_EMAILS = ["lcdafayesifontesweb@gmail.com"] as const;
+export const ADMIN_EMAILS = ["admin@lcdafayesifontes.com"] as const;
 
 const MODALITY_LABELS: Record<string, string> = {
   presencial: "Presencial",
@@ -30,7 +30,7 @@ function escapeHtml(value: string): string {
 
 function getFromAddress(): string {
   return (
-    process.env.RESEND_FROM_EMAIL?.trim() || "onboarding@resend.dev"
+    process.env.RESEND_FROM_EMAIL?.trim() || "admin@lcdafayesifontes.com"
   );
 }
 
