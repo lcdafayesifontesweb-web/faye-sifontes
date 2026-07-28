@@ -4,28 +4,27 @@ import {
   type DocumentActionProps,
   useClient,
   useDocumentOperation,
-  useFormValue,
 } from "sanity";
 
 /**
- * Botón neutro: publica el estado elegido en el formulario
+ * Botón neutro: publica el estado elegido en el documento
  * (Pago Confirmado / Rechazado) y envía el correo correspondiente.
+ * No usa useFormValue: ese hook rompe el Structure Tool fuera del editor.
  */
 export const NotifyEnrollmentAction: DocumentActionComponent = (
   props: DocumentActionProps
 ) => {
-  const { id, type, onComplete } = props;
+  const { id, type, draft, published, onComplete } = props;
   const { publish } = useDocumentOperation(id, type);
   const client = useClient({ apiVersion: "2024-01-01" });
-  const formStatus = useFormValue(["status"]) as string | undefined;
-  const statusEmailSent = useFormValue(["statusEmailSent"]) as
-    | string
-    | undefined;
   const [busy, setBusy] = useState(false);
 
   if (type !== "enrollment") return null;
 
-  const status = formStatus;
+  const displayed = draft ?? published;
+  const status = displayed?.status as string | undefined;
+  const statusEmailSent = displayed?.statusEmailSent as string | undefined;
+
   const isFinal = status === "approved" || status === "rejected";
   const alreadySent = isFinal && statusEmailSent === status;
 
@@ -42,13 +41,13 @@ export const NotifyEnrollmentAction: DocumentActionComponent = (
       try {
         const publishedId = id.replace(/^drafts\./, "");
 
-        // Publicar el draft (incluye el estado elegido en el formulario)
+        // Publicar el draft (incluye el estado elegido)
         if (!publish.disabled) {
           publish.execute();
           await new Promise((r) => setTimeout(r, 1200));
         }
 
-        // Asegurar que el documento publicado tenga el estado del formulario
+        // Asegurar el estado en el documento publicado
         await client
           .patch(publishedId)
           .set({ status })
