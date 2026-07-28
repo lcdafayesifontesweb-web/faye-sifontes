@@ -258,14 +258,17 @@ export function buildStudentRejectedHtml(params: {
   });
 }
 
+/** Resultado de envío: ok o mensaje de error de Resend/config */
+export type SendEmailResult = { ok: true } | { ok: false; error: string };
+
 async function sendEmail(params: {
   to: string | string[];
   subject: string;
   html: string;
-}): Promise<boolean> {
+}): Promise<SendEmailResult> {
   if (!process.env.RESEND_API_KEY?.trim()) {
     console.error("[enrollmentEmails] RESEND_API_KEY ausente; correo no enviado.");
-    return false;
+    return { ok: false, error: "RESEND_API_KEY ausente en el servidor" };
   }
   try {
     const result = await resend.emails.send({
@@ -276,12 +279,19 @@ async function sendEmail(params: {
     });
     if (result.error) {
       console.error("[enrollmentEmails] Resend error:", result.error);
-      return false;
+      const msg =
+        typeof result.error === "object" && result.error && "message" in result.error
+          ? String((result.error as { message?: string }).message)
+          : JSON.stringify(result.error);
+      return { ok: false, error: msg || "Error de Resend" };
     }
-    return true;
+    return { ok: true };
   } catch (err) {
     console.error("[enrollmentEmails] Resend exception:", err);
-    return false;
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Excepción al enviar correo",
+    };
   }
 }
 
@@ -305,10 +315,10 @@ export async function notifyAdminsNewEnrollment(params: {
   referenceNumber: string;
   monto: string;
   siteOrigin: string;
-}): Promise<void> {
+}): Promise<SendEmailResult> {
   const logoUrl = getLogoUrl(params.siteOrigin);
   const studioUrl = `${params.siteOrigin}/studio`;
-  await sendEmail({
+  return sendEmail({
     to: [...ADMIN_EMAILS],
     subject: `🚨 Nuevo Pago Móvil por Validar - ${params.studentName}`,
     html: buildAdminPendingHtml({
@@ -324,8 +334,8 @@ export async function notifyStudentReceived(params: {
   email: string;
   courseTitle?: string;
   siteOrigin: string;
-}): Promise<void> {
-  await sendEmail({
+}): Promise<SendEmailResult> {
+  return sendEmail({
     to: params.email,
     subject: `Recibimos tu inscripción — ${BRAND.company}`,
     html: buildStudentReceivedHtml({
@@ -341,7 +351,7 @@ export async function notifyStudentApproved(params: {
   email: string;
   course: CourseEmailInfo;
   siteOrigin: string;
-}): Promise<boolean> {
+}): Promise<SendEmailResult> {
   return sendEmail({
     to: params.email,
     subject: `Inscripción confirmada: ${params.course.title} — ${BRAND.company}`,
@@ -358,7 +368,7 @@ export async function notifyStudentRejected(params: {
   email: string;
   courseTitle?: string;
   siteOrigin: string;
-}): Promise<boolean> {
+}): Promise<SendEmailResult> {
   return sendEmail({
     to: params.email,
     subject: `Importante: no pudimos confirmar tu pago — ${BRAND.company}`,

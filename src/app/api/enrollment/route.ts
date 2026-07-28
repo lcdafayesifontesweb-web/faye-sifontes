@@ -129,8 +129,9 @@ export async function POST(request: Request) {
 
     const siteOrigin = resolveSiteOrigin(request.url);
 
-    // Correos en segundo plano: un fallo de Resend no afecta el 200 al estudiante
-    void Promise.all([
+    // IMPORTANTE: await (no void). En Vercel, el work en background tras el
+    // response se corta y los correos no llegan aunque la inscripción sí se guarde.
+    const [adminMail, studentMail] = await Promise.all([
       notifyAdminsNewEnrollment({
         studentName,
         idCard,
@@ -148,10 +149,21 @@ export async function POST(request: Request) {
       }),
     ]);
 
+    if (!adminMail.ok) {
+      console.error("[api/enrollment] correo admin falló:", adminMail.error);
+    }
+    if (!studentMail.ok) {
+      console.error("[api/enrollment] correo alumno falló:", studentMail.error);
+    }
+
     return NextResponse.json({
       ok: true,
       id: doc._id,
       status: "pending",
+      emails: {
+        admin: adminMail.ok,
+        student: studentMail.ok,
+      },
     });
   } catch (err) {
     console.error("[api/enrollment] create error:", err);

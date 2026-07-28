@@ -87,7 +87,7 @@ export async function POST(request: Request) {
   const siteOrigin = resolveSiteOrigin(request.url);
   const courseTitle = doc.course?.title;
 
-  let sent = false;
+  let result;
   if (status === "approved") {
     const course: CourseEmailInfo = {
       title: courseTitle || "Curso",
@@ -97,14 +97,14 @@ export async function POST(request: Request) {
       modality: doc.course?.modality,
       instructorName: doc.course?.instructorName,
     };
-    sent = await notifyStudentApproved({
+    result = await notifyStudentApproved({
       studentName,
       email,
       course,
       siteOrigin,
     });
   } else {
-    sent = await notifyStudentRejected({
+    result = await notifyStudentRejected({
       studentName,
       email,
       courseTitle,
@@ -112,7 +112,7 @@ export async function POST(request: Request) {
     });
   }
 
-  if (sent) {
+  if (result.ok) {
     try {
       const writeClient = getWriteClient();
       await writeClient
@@ -127,5 +127,10 @@ export async function POST(request: Request) {
     }
   }
 
-  return NextResponse.json({ ok: true, status, emailed: sent });
+  return NextResponse.json({
+    ok: true,
+    status,
+    emailed: result.ok,
+    ...(result.ok ? {} : { error: result.error }),
+  });
 }

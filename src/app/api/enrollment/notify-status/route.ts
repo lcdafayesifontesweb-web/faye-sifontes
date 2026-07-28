@@ -5,6 +5,7 @@ import {
   notifyStudentRejected,
   resolveSiteOrigin,
   type CourseEmailInfo,
+  type SendEmailResult,
 } from "@/lib/enrollmentEmails";
 
 export const runtime = "nodejs";
@@ -25,14 +26,20 @@ type EnrollmentDoc = {
   } | null;
 };
 
+type NotifyBody = {
+  enrollmentId?: string;
+  /** Estado a notificar; si viene del Studio, evita carrera draft vs published */
+  status?: "approved" | "rejected";
+};
+
 /**
- * Envía el correo al alumno según el estado actual de la inscripción en Sanity.
- * Usado por las acciones del Studio (Confirmar / Rechazar) y como respaldo del webhook.
+ * Envía el correo al alumno según el estado de la inscripción.
+ * Usado por el botón «Enviar» del Studio.
  */
 export async function POST(request: Request) {
-  let body: { enrollmentId?: string };
+  let body: NotifyBody;
   try {
-    body = (await request.json()) as { enrollmentId?: string };
+    body = (await request.json()) as NotifyBody;
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
@@ -54,8 +61,12 @@ export async function POST(request: Request) {
   }
 
   const publishedId = enrollmentId.replace(/^drafts\./, "");
-  const doc = await writeClient.fetch<EnrollmentDoc | null>(
-    `*[_type == "enrollment" && (_id == $id || _id == $draftId)]|order(_updatedAt desc)[0]{
+  const draftId = `drafts.${publishedId}`;
+
+  // Preferir el doc con estado final (approved/rejected) para no leer
+  // un published "pending" mientras el draft ya está confirmado.
+  const docs = await writeClient.fetch<EnrollmentDoc[]>(
+    `*[_type == "enrollment" && (_id == $id || _id == $draftId)]{
       _id,
       studentName,
       email,
@@ -70,22 +81,62 @@ export async function POST(request: Request) {
         "instructorName": instructor->name
       }
     }`,
-    { id: publishedId, draftId: `drafts.${publishedId}` }
+    { id: publishedId, draftId }
   );
 
-  if (!doc) {
+  if (!docs?.length) {
     return NextResponse.json({ error: "Inscripción no encontrada" }, { status: 404 });
   }
 
-  const status = doc.status;
+  const requestedStatus =
+    body.status === "approved" || body.status === "rejected"
+      ? body.status
+      : undefined;
+
+  const withFinal = docs.filter(
+    (d) => d.status === "approved" || d.status === "rejected"
+  );
+  const doc =
+    (requestedStatus
+      ? docs.find((d) => d.status === requestedStatus)
+      : undefined) ||
+    withFinal[0] ||
+    docs.find((d) => d._id === publishedId) ||
+    docs[0];
+
+  const status = requestedStatus || doc.status;
   if (status !== "approved" && status !== "rejected") {
     return NextResponse.json({
       ok: false,
-      error: "El estado debe ser Pago Confirmado o Rechazado para notificar.",
+      error:
+        "El estado debe ser Pago Confirmado o Rechazado para notificar. Guarda el cambio de estado y vuelve a pulsar Enviar.",
     });
   }
 
-  if (doc.statusEmailSent === status) {
+  // Si el Studio pidió un status, forzar published (+ draft si existe)
+  if (requestedStatus) {
+    try {
+      await writeClient
+        .patch(publishedId)
+        .set({ status: requestedStatus })
+        .commit({ visibility: "sync" });
+    } catch (err) {
+      console.error("[notify-status] patch published:", err);
+    }
+    try {
+      await writeClient
+        .patch(draftId)
+        .set({ status: requestedStatus })
+        .commit({ visibility: "sync" });
+    } catch {
+      /* draft puede no existir */
+    }
+  }
+
+  const alreadySent =
+    doc.statusEmailSent === status ||
+    docs.some((d) => d.statusEmailSent === status);
+  if (alreadySent) {
     return NextResponse.json({
       ok: true,
       skipped: true,
@@ -103,7 +154,7 @@ export async function POST(request: Request) {
   }
 
   const siteOrigin = resolveSiteOrigin(request.url);
-  let sent = false;
+  let result: SendEmailResult;
 
   if (status === "approved") {
     const course: CourseEmailInfo = {
@@ -114,14 +165,14 @@ export async function POST(request: Request) {
       modality: doc.course?.modality,
       instructorName: doc.course?.instructorName,
     };
-    sent = await notifyStudentApproved({
+    result = await notifyStudentApproved({
       studentName,
       email,
       course,
       siteOrigin,
     });
   } else {
-    sent = await notifyStudentRejected({
+    result = await notifyStudentRejected({
       studentName,
       email,
       courseTitle: doc.course?.title,
@@ -129,33 +180,25 @@ export async function POST(request: Request) {
     });
   }
 
-  if (!sent) {
+  if (!result.ok) {
     return NextResponse.json(
       {
         ok: false,
-        error:
-          "No se pudo enviar el correo (revisa RESEND_API_KEY / dominio verificado).",
+        error: `No se pudo enviar el correo: ${result.error}`,
       },
       { status: 502 }
     );
   }
 
-  // Marca en published y draft si existen
-  try {
-    await writeClient
-      .patch(publishedId)
-      .set({ statusEmailSent: status })
-      .commit({ visibility: "sync" });
-  } catch {
-    /* published puede no existir aún */
-  }
-  try {
-    await writeClient
-      .patch(`drafts.${publishedId}`)
-      .set({ statusEmailSent: status })
-      .commit({ visibility: "sync" });
-  } catch {
-    /* draft puede no existir */
+  for (const targetId of [publishedId, draftId]) {
+    try {
+      await writeClient
+        .patch(targetId)
+        .set({ statusEmailSent: status })
+        .commit({ visibility: "sync" });
+    } catch {
+      /* puede no existir */
+    }
   }
 
   return NextResponse.json({ ok: true, status, emailed: true });

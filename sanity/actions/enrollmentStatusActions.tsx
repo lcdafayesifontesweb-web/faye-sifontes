@@ -7,9 +7,8 @@ import {
 } from "sanity";
 
 /**
- * Botón neutro: publica el estado elegido en el documento
- * (Pago Confirmado / Rechazado) y envía el correo correspondiente.
- * No usa useFormValue: ese hook rompe el Structure Tool fuera del editor.
+ * Botón neutro: publica el estado elegido (Pago Confirmado / Rechazado)
+ * y envía el correo correspondiente.
  */
 export const NotifyEnrollmentAction: DocumentActionComponent = (
   props: DocumentActionProps
@@ -40,24 +39,33 @@ export const NotifyEnrollmentAction: DocumentActionComponent = (
       setBusy(true);
       try {
         const publishedId = id.replace(/^drafts\./, "");
+        const finalStatus = status as "approved" | "rejected";
 
-        // Publicar el draft (incluye el estado elegido)
-        if (!publish.disabled) {
-          publish.execute();
-          await new Promise((r) => setTimeout(r, 1200));
-        }
-
-        // Asegurar el estado en el documento publicado
+        // 1) Forzar estado en published y draft (evita carrera con Publicar)
         await client
           .patch(publishedId)
-          .set({ status })
+          .set({ status: finalStatus })
+          .commit({ visibility: "sync" })
+          .catch(() => undefined);
+        await client
+          .patch(`drafts.${publishedId}`)
+          .set({ status: finalStatus })
           .commit({ visibility: "sync" })
           .catch(() => undefined);
 
+        if (!publish.disabled) {
+          publish.execute();
+          await new Promise((r) => setTimeout(r, 1500));
+        }
+
+        // 2) Notificar pasando el status explícito
         const res = await fetch("/api/enrollment/notify-status", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ enrollmentId: publishedId }),
+          body: JSON.stringify({
+            enrollmentId: publishedId,
+            status: finalStatus,
+          }),
         });
         const data = (await res.json()) as {
           ok?: boolean;
@@ -69,7 +77,7 @@ export const NotifyEnrollmentAction: DocumentActionComponent = (
         if (!res.ok || !data.ok) {
           window.alert(
             data.error ||
-              "El estado se guardó, pero el correo al alumno no se pudo enviar. Revisa Resend."
+              "El estado se guardó, pero el correo al alumno no se pudo enviar."
           );
         } else if (data.skipped) {
           window.alert(data.message || "El alumno ya había sido notificado.");
