@@ -26,13 +26,16 @@ import {
   usdToBs,
   type TasaResponse,
 } from "@/lib/tasa";
+import {
+  classifyCourseModality,
+  type PurchaseModality,
+} from "@/lib/modality";
 import CertificationBadge from "./CertificationBadge";
 import CourseGallery from "./CourseGallery";
 import SmartChatbox from "./SmartChatbox";
 import SmartNavLink from "./SmartNavLink";
 
 type PaymentStep = "form" | "payment" | "success";
-type PurchaseModality = "online" | "presencial";
 
 const MAX_PROOF_BYTES = 5 * 1024 * 1024;
 const ALLOWED_PROOF_TYPES = new Set([
@@ -47,8 +50,16 @@ interface CourseLandingProps {
 
 export default function CourseLanding({ course }: CourseLandingProps) {
   const instructor = course.instructor;
+  const modalityFlags = useMemo(
+    () =>
+      classifyCourseModality(course.modality || course.modalityLabel),
+    [course.modality, course.modalityLabel]
+  );
+
   const [step, setStep] = useState<PaymentStep>("form");
-  const [modality, setModality] = useState<PurchaseModality>("online");
+  const [modality, setModality] = useState<PurchaseModality>(
+    modalityFlags.defaultPurchase
+  );
   const [formData, setFormData] = useState({
     nombre: "",
     cedula: "",
@@ -64,6 +75,13 @@ export default function CourseLanding({ course }: CourseLandingProps) {
   const [tasaError, setTasaError] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Si el curso es de una sola modalidad, forzar el estado de compra
+  useEffect(() => {
+    if (!modalityFlags.esMixto) {
+      setModality(modalityFlags.defaultPurchase);
+    }
+  }, [modalityFlags]);
+
   const referenceValid = useMemo(
     () => /^\d{4,}$/.test(reference.replace(/\s/g, "")),
     [reference]
@@ -78,6 +96,16 @@ export default function CourseLanding({ course }: CourseLandingProps) {
     if (!tasaData) return null;
     return usdToBs(selectedUsd, tasaData.tasa);
   }, [tasaData, selectedUsd]);
+
+  const bsOnline = useMemo(() => {
+    if (!tasaData) return null;
+    return usdToBs(course.priceOnline, tasaData.tasa);
+  }, [tasaData, course.priceOnline]);
+
+  const bsPresencial = useMemo(() => {
+    if (!tasaData) return null;
+    return usdToBs(course.price, tasaData.tasa);
+  }, [tasaData, course.price]);
 
   const modalityLabel =
     modality === "online" ? "Online" : "Presencial";
@@ -285,18 +313,49 @@ export default function CourseLanding({ course }: CourseLandingProps) {
               )}
               <div className="pt-4 border-t border-white/20 min-w-0">
                 <p className="text-white/70 text-sm mb-2">Inversión</p>
-                <p className="text-2xl sm:text-3xl font-extrabold text-brand-300 break-words transition-all duration-300">
-                  ${selectedUsd}{" "}
-                  <span className="text-base font-medium text-white/80">
-                    {modalityLabel}
-                  </span>
-                </p>
-                {selectedBs != null ? (
-                  <p className="text-sm text-white/70 mt-1">
-                    Bs. {formatBs(selectedBs)}
-                  </p>
+                {modalityFlags.esMixto ? (
+                  <div className="space-y-2">
+                    <p className="text-xl sm:text-2xl font-extrabold text-brand-300 break-words">
+                      ${course.priceOnline}{" "}
+                      <span className="text-base font-medium text-white/80">
+                        Online
+                      </span>
+                      {bsOnline != null && (
+                        <span className="block text-sm font-semibold text-white/75 mt-0.5">
+                          Bs. {formatBs(bsOnline)}
+                        </span>
+                      )}
+                    </p>
+                    <p className="text-xl sm:text-2xl font-extrabold text-brand-300 break-words">
+                      ${course.price}{" "}
+                      <span className="text-base font-medium text-white/80">
+                        Presencial
+                      </span>
+                      {bsPresencial != null && (
+                        <span className="block text-sm font-semibold text-white/75 mt-0.5">
+                          Bs. {formatBs(bsPresencial)}
+                        </span>
+                      )}
+                    </p>
+                  </div>
                 ) : (
-                  <p className="text-sm text-white/60 mt-1">{course.currency}</p>
+                  <>
+                    <p className="text-2xl sm:text-3xl font-extrabold text-brand-300 break-words">
+                      ${selectedUsd}{" "}
+                      <span className="text-base font-medium text-white/80">
+                        {modalityFlags.esSoloOnline ? "Online" : "Presencial"}
+                      </span>
+                    </p>
+                    {selectedBs != null ? (
+                      <p className="text-sm text-white/70 mt-1">
+                        Bs. {formatBs(selectedBs)}
+                      </p>
+                    ) : (
+                      <p className="text-sm text-white/60 mt-1">
+                        {course.currency}
+                      </p>
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -381,45 +440,58 @@ export default function CourseLanding({ course }: CourseLandingProps) {
                 <div className="p-6">
                   {(step === "form" || step === "payment") && (
                     <div className="mb-5">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">
-                        Elige tu modalidad
-                      </p>
-                      <div
-                        role="tablist"
-                        aria-label="Modalidad de inscripción"
-                        className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-slate-100"
-                      >
-                        <button
-                          type="button"
-                          role="tab"
-                          aria-selected={modality === "online"}
-                          onClick={() => setModality("online")}
-                          className={`rounded-lg px-3 py-2.5 text-sm font-semibold transition-all duration-200 ${
-                            modality === "online"
-                              ? "bg-brand-blue text-white shadow-sm"
-                              : "bg-transparent text-slate-600 hover:bg-white/70"
-                          }`}
-                        >
-                          💻 Online
-                        </button>
-                        <button
-                          type="button"
-                          role="tab"
-                          aria-selected={modality === "presencial"}
-                          onClick={() => setModality("presencial")}
-                          className={`rounded-lg px-3 py-2.5 text-sm font-semibold transition-all duration-200 ${
-                            modality === "presencial"
-                              ? "bg-brand-blue text-white shadow-sm"
-                              : "bg-transparent text-slate-600 hover:bg-white/70"
-                          }`}
-                        >
-                          🏢 Presencial
-                        </button>
-                      </div>
+                      {modalityFlags.esMixto ? (
+                        <>
+                          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">
+                            Elige tu modalidad
+                          </p>
+                          <div
+                            role="tablist"
+                            aria-label="Modalidad de inscripción"
+                            className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-slate-100"
+                          >
+                            <button
+                              type="button"
+                              role="tab"
+                              aria-selected={modality === "online"}
+                              onClick={() => setModality("online")}
+                              className={`rounded-lg px-3 py-2.5 text-sm font-semibold transition-all duration-200 ${
+                                modality === "online"
+                                  ? "bg-brand-blue text-white shadow-sm"
+                                  : "bg-transparent text-slate-600 hover:bg-white/70"
+                              }`}
+                            >
+                              💻 Online
+                            </button>
+                            <button
+                              type="button"
+                              role="tab"
+                              aria-selected={modality === "presencial"}
+                              onClick={() => setModality("presencial")}
+                              className={`rounded-lg px-3 py-2.5 text-sm font-semibold transition-all duration-200 ${
+                                modality === "presencial"
+                                  ? "bg-brand-blue text-white shadow-sm"
+                                  : "bg-transparent text-slate-600 hover:bg-white/70"
+                              }`}
+                            >
+                              🏢 Presencial
+                            </button>
+                          </div>
+                        </>
+                      ) : (
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">
+                          Modalidad{" "}
+                          {modalityFlags.esSoloOnline
+                            ? "Online"
+                            : "Presencial"}
+                        </p>
+                      )}
 
                       <div
                         key={modality}
-                        className="mt-4 rounded-xl border border-brand-100 bg-brand-50/50 px-4 py-3 transition-all duration-300"
+                        className={`rounded-xl border border-brand-100 bg-brand-50/50 px-4 py-3 transition-all duration-300 ${
+                          modalityFlags.esMixto ? "mt-4" : ""
+                        }`}
                       >
                         <p className="text-xs font-medium text-slate-500 mb-1">
                           Inversión {modalityLabel}

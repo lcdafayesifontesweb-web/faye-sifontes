@@ -152,6 +152,8 @@ export interface CoursePageData {
   description: string;
   date: string;
   schedule: string;
+  /** Valor crudo de Sanity: presencial | zoom | mixto */
+  modality: string;
   modalityLabel: string;
   features: string[];
   price: number;
@@ -256,6 +258,7 @@ function mapSanityCoursePage(course: SanityCourse): CoursePageData {
     description: course.description,
     date: course.date,
     schedule: course.schedule,
+    modality: course.modality ?? "",
     modalityLabel: MODALITY_LABELS[course.modality] ?? course.modality,
     features: normalizeFeaturesList(course.features),
     price: course.price ?? 0,
