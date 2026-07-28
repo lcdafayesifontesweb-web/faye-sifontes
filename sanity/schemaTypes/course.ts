@@ -21,6 +21,13 @@ export const course = defineType({
   name: "course",
   title: "Curso",
   type: "document",
+  fieldsets: [
+    {
+      name: "pricing",
+      title: "Precios (USD)",
+      options: { columns: 2 },
+    },
+  ],
   fields: [
     defineField({
       name: "title",
@@ -69,6 +76,34 @@ export const course = defineType({
       type: "string",
       options: { list: MODALITIES, layout: "radio" },
       validation: (rule) => rule.required(),
+    }),
+    defineField({
+      name: "priceOnline",
+      title: "Precio online",
+      type: "number",
+      fieldset: "pricing",
+      description: "Modalidad online / Zoom",
+      validation: (rule) => rule.required().min(0),
+    }),
+    defineField({
+      name: "price",
+      title: "Precio presencial",
+      type: "number",
+      fieldset: "pricing",
+      description: "Modalidad presencial",
+      validation: (rule) => rule.required().min(0),
+    }),
+    defineField({
+      name: "currency",
+      title: "Moneda",
+      type: "string",
+      initialValue: "USD",
+      options: {
+        list: [
+          { title: "USD", value: "USD" },
+          { title: "Bs.", value: "VES" },
+        ],
+      },
     }),
     defineField({
       name: "features",
@@ -123,32 +158,6 @@ export const course = defineType({
       type: "boolean",
       description: "Mostrar en la sección de Cursos Destacados del Home",
       initialValue: false,
-    }),
-    defineField({
-      name: "price",
-      title: "Precio presencial",
-      type: "number",
-      description: "Inversión modalidad presencial (USD)",
-      validation: (rule) => rule.required().min(0),
-    }),
-    defineField({
-      name: "priceOnline",
-      title: "Precio online",
-      type: "number",
-      description: "Inversión modalidad online / Zoom (USD)",
-      validation: (rule) => rule.required().min(0),
-    }),
-    defineField({
-      name: "currency",
-      title: "Moneda",
-      type: "string",
-      initialValue: "USD",
-      options: {
-        list: [
-          { title: "USD", value: "USD" },
-          { title: "Bs.", value: "VES" },
-        ],
-      },
     }),
     defineField({
       name: "certifiedBy",
