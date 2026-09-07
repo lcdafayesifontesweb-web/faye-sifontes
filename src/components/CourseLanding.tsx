@@ -114,7 +114,7 @@ export default function CourseLanding({ course }: CourseLandingProps) {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch("/api/tasa");
+        const res = await fetch("/api/tasa", { cache: "no-store" });
         if (!res.ok) throw new Error("tasa_fail");
         const data = (await res.json()) as TasaResponse;
         if (!cancelled && Number.isFinite(data.tasa)) {

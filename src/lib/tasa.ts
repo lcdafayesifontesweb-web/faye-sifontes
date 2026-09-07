@@ -12,7 +12,12 @@ export function formatBs(amount: number): string {
   });
 }
 
-/** Ejemplo: 28/07/2026 - 3:15 PM (hora Caracas) */
+/**
+ * Ejemplo: 07/09/2026 - 3:15 PM (hora Caracas).
+ * El BCV publica una tasa diaria (fecha valor), así que cuando el timestamp
+ * cae en medianoche de Caracas devolvemos solo la fecha: mostrar "12:00 AM"
+ * parece un dato roto.
+ */
 export function formatUltimaActualizacion(date: Date = new Date()): string {
   const dtf = new Intl.DateTimeFormat("en-GB", {
     timeZone: "America/Caracas",
@@ -32,6 +37,10 @@ export function formatUltimaActualizacion(date: Date = new Date()): string {
   const hour = timeParts.find((p) => p.type === "hour")?.value ?? "";
   const minute = timeParts.find((p) => p.type === "minute")?.value ?? "";
   const dayPeriod = timeParts.find((p) => p.type === "dayPeriod")?.value ?? "";
+
+  if (hour === "12" && minute === "00" && dayPeriod.toUpperCase() === "AM") {
+    return fecha;
+  }
 
   return `${fecha} - ${hour}:${minute} ${dayPeriod}`;
 }
