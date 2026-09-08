@@ -49,7 +49,7 @@ interface CourseLandingProps {
 }
 
 export default function CourseLanding({ course }: CourseLandingProps) {
-  const instructor = course.instructor;
+  const instructors = course.instructors;
   const modalityFlags = useMemo(
     () =>
       classifyCourseModality(course.modality || course.modalityLabel),
@@ -308,8 +308,12 @@ export default function CourseLanding({ course }: CourseLandingProps) {
               <FichaItem icon={Calendar} label="Fecha" value={course.date} />
               <FichaItem icon={Clock} label="Horario" value={course.schedule} />
               <FichaItem icon={MapPin} label="Modalidad" value={course.modalityLabel} />
-              {instructor && (
-                <FichaItem icon={User} label="Facilitador" value={instructor.name} />
+              {instructors.length > 0 && (
+                <FichaItem
+                  icon={User}
+                  label={instructors.length > 1 ? "Facilitadores" : "Facilitador"}
+                  value={instructors.map((i) => i.name).join(", ")}
+                />
               )}
               <div className="pt-4 border-t border-white/20 min-w-0">
                 <p className="text-white/70 text-sm mb-2">Inversión</p>
@@ -386,32 +390,48 @@ export default function CourseLanding({ course }: CourseLandingProps) {
                 ))}
               </ul>
 
-              {instructor && (
-                <div className="mt-10 p-6 rounded-2xl bg-slate-50 border border-slate-100">
-                  <div className="flex items-start gap-4">
-                    {instructor.photoUrl ? (
-                      <div className="relative w-16 h-16 rounded-full overflow-hidden shrink-0 ring-2 ring-brand-100">
-                        <Image
-                          src={instructor.photoUrl}
-                          alt={instructor.name}
-                          fill
-                          className="object-cover"
-                          sizes="64px"
-                        />
+              {instructors.length > 0 && (
+                <div className="mt-10 space-y-4">
+                  {instructors.length > 1 && (
+                    <h3 className="text-sm font-bold uppercase tracking-wide text-slate-500">
+                      Facilitadores
+                    </h3>
+                  )}
+                  {instructors.map((instructor) => (
+                    <div
+                      key={instructor.id}
+                      className="p-6 rounded-2xl bg-slate-50 border border-slate-100"
+                    >
+                      <div className="flex items-start gap-4">
+                        {instructor.photoUrl ? (
+                          <div className="relative w-16 h-16 rounded-full overflow-hidden shrink-0 ring-2 ring-brand-100">
+                            <Image
+                              src={instructor.photoUrl}
+                              alt={instructor.name}
+                              fill
+                              className="object-cover"
+                              sizes="64px"
+                            />
+                          </div>
+                        ) : (
+                          <div
+                            className={`w-16 h-16 rounded-full bg-gradient-to-br ${instructor.avatarColor} flex items-center justify-center text-white font-bold text-xl shrink-0`}
+                          >
+                            {instructor.avatarInitials}
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className="font-bold text-slate-900">
+                            {instructor.name}
+                          </p>
+                          <p className="text-sm text-brand-600">
+                            {instructor.role}
+                          </p>
+                          <InstructorBio bio={instructor.bio} />
+                        </div>
                       </div>
-                    ) : (
-                      <div
-                        className={`w-16 h-16 rounded-full bg-gradient-to-br ${instructor.avatarColor} flex items-center justify-center text-white font-bold text-xl shrink-0`}
-                      >
-                        {instructor.avatarInitials}
-                      </div>
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <p className="font-bold text-slate-900">{instructor.name}</p>
-                      <p className="text-sm text-brand-600">{instructor.role}</p>
-                      <InstructorBio bio={instructor.bio} />
                     </div>
-                  </div>
+                  ))}
                 </div>
               )}
             </div>

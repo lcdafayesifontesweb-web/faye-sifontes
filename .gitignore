@@ -11,3 +11,8 @@ corregir-ids-cursos.js
 .env*
  
  
+# Artefactos de build
+tsconfig.tsbuildinfo
+
+# Temporales de Word
+~$*

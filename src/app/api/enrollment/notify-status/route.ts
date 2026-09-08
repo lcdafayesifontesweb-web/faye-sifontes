@@ -7,8 +7,19 @@ import {
   type CourseEmailInfo,
   type SendEmailResult,
 } from "@/lib/enrollmentEmails";
+import { resolveInstructorNames } from "@/lib/instructors";
+
+import {
+  checkRateLimit,
+  getClientIp,
+  tooManyRequests,
+} from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
+
+/** Solo la usan editores desde el Studio: 30 por hora por IP. */
+const RATE_LIMIT = 30;
+const RATE_WINDOW_MS = 60 * 60 * 1000;
 
 type EnrollmentDoc = {
   _id: string;
@@ -22,7 +33,8 @@ type EnrollmentDoc = {
     date?: string;
     schedule?: string;
     modality?: string;
-    instructorName?: string;
+    instructorNames?: string[];
+    legacyInstructorName?: string | null;
   } | null;
 };
 
@@ -37,6 +49,15 @@ type NotifyBody = {
  * Usado por el botón «Enviar» del Studio.
  */
 export async function POST(request: Request) {
+  const limit = checkRateLimit(
+    `notify-status:${getClientIp(request)}`,
+    RATE_LIMIT,
+    RATE_WINDOW_MS
+  );
+  if (!limit.allowed) {
+    return tooManyRequests(limit.retryAfter, "Demasiadas solicitudes.");
+  }
+
   let body: NotifyBody;
   try {
     body = (await request.json()) as NotifyBody;
@@ -78,7 +99,8 @@ export async function POST(request: Request) {
         date,
         schedule,
         modality,
-        "instructorName": instructor->name
+        "instructorNames": instructors[]->name,
+        "legacyInstructorName": instructor->name
       }
     }`,
     { id: publishedId, draftId }
@@ -104,33 +126,20 @@ export async function POST(request: Request) {
     docs.find((d) => d._id === publishedId) ||
     docs[0];
 
-  const status = requestedStatus || doc.status;
+  // El estado sale SIEMPRE del documento en Sanity, nunca del body.
+  //
+  // Esta ruta no tiene sesión de usuario: la llama el navegador desde el
+  // Studio. Si aceptara el estado del body y lo escribiera, cualquiera podría
+  // marcar una inscripción como "Pago Confirmado" sin haber pagado. El Studio
+  // ya guarda el estado con las credenciales del editor (commit sync) antes de
+  // llamar aquí, así que este endpoint solo necesita leerlo y enviar el correo.
+  const status = doc.status;
   if (status !== "approved" && status !== "rejected") {
     return NextResponse.json({
       ok: false,
       error:
         "El estado debe ser Pago Confirmado o Rechazado para notificar. Guarda el cambio de estado y vuelve a pulsar Enviar.",
     });
-  }
-
-  // Si el Studio pidió un status, forzar published (+ draft si existe)
-  if (requestedStatus) {
-    try {
-      await writeClient
-        .patch(publishedId)
-        .set({ status: requestedStatus })
-        .commit({ visibility: "sync" });
-    } catch (err) {
-      console.error("[notify-status] patch published:", err);
-    }
-    try {
-      await writeClient
-        .patch(draftId)
-        .set({ status: requestedStatus })
-        .commit({ visibility: "sync" });
-    } catch {
-      /* draft puede no existir */
-    }
   }
 
   const alreadySent =
@@ -153,7 +162,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const siteOrigin = resolveSiteOrigin(request.url);
+  const siteOrigin = resolveSiteOrigin();
   let result: SendEmailResult;
 
   if (status === "approved") {
@@ -163,7 +172,10 @@ export async function POST(request: Request) {
       date: doc.course?.date,
       schedule: doc.course?.schedule,
       modality: doc.course?.modality,
-      instructorName: doc.course?.instructorName,
+      instructorNames: resolveInstructorNames(
+        doc.course?.instructorNames,
+        doc.course?.legacyInstructorName
+      ),
     };
     result = await notifyStudentApproved({
       studentName,

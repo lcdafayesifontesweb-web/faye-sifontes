@@ -6,7 +6,3 @@ export const dataset =
 
 export const projectId =
   process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || "";
-
-export function isSanityConfigured(): boolean {
-  return Boolean(projectId && dataset && projectId !== "tu_project_id_aqui");
-}

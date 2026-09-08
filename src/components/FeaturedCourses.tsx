@@ -248,11 +248,12 @@ function CourseCard({ course }: { course: HomeCourse }) {
           </li>
         </ul>
 
-        {course.instructorName && (
+        {course.instructorNames.length > 0 && (
           <p className="text-xs text-slate-500 mb-3">
-            Facilitador:{" "}
+            {course.instructorNames.length > 1 ? "Facilitadores" : "Facilitador"}
+            :{" "}
             <span className="font-semibold text-slate-700">
-              {course.instructorName}
+              {course.instructorNames.join(", ")}
             </span>
           </p>
         )}

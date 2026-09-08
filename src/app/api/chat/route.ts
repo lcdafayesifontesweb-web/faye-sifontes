@@ -1,9 +1,20 @@
 import { NextResponse } from "next/server";
 import { client as sanityClient } from "@/sanity/client";
 import type { ChatMessage, ChatRequestBody } from "@/types/chat";
+import { resolveInstructorNames } from "@/lib/instructors";
 import { normalizeFeaturesList } from "@/lib/features";
 
+import {
+  checkRateLimit,
+  getClientIp,
+  tooManyRequests,
+} from "@/lib/rateLimit";
+
 export const runtime = "nodejs";
+
+/** Cada consulta cuesta cuota de Gemini: 20 cada 10 min por IP. */
+const RATE_LIMIT = 20;
+const RATE_WINDOW_MS = 10 * 60 * 1000;
 
 const MAX_HISTORY = 12;
 const GEMINI_MODEL = "gemini-3.1-flash-lite";
@@ -25,7 +36,8 @@ const COURSE_BY_SLUG_QUERY = `*[_type == "course" && slug.current == $slug][0]{
   priceOnline,
   currency,
   certifiedBy,
-  "instructor": instructor->name,
+  "instructorNames": instructors[]->name,
+  "legacyInstructorName": instructor->name,
   gallery
 }`;
 
@@ -40,7 +52,8 @@ interface SanityCourseChatData {
   priceOnline?: number;
   currency?: string;
   certifiedBy?: string;
-  instructor?: string | null;
+  instructorNames?: (string | null)[] | null;
+  legacyInstructorName?: string | null;
   gallery?: unknown[];
 }
 
@@ -90,7 +103,10 @@ function toGeminiContents(messages: ChatMessage[]): GeminiContent[] {
 }
 
 function buildSystemInstruction(
-  courseData: Omit<SanityCourseChatData, "features"> & { features: string[] }
+  courseData: Omit<
+    SanityCourseChatData,
+    "features" | "instructorNames" | "legacyInstructorName"
+  > & { features: string[]; facilitadores: string[] }
 ): string {
   return `${generalContext}
 
@@ -110,6 +126,18 @@ Reglas de respuesta:
 }
 
 export async function POST(request: Request) {
+  const limit = checkRateLimit(
+    `chat:${getClientIp(request)}`,
+    RATE_LIMIT,
+    RATE_WINDOW_MS
+  );
+  if (!limit.allowed) {
+    return tooManyRequests(
+      limit.retryAfter,
+      "Demasiadas consultas seguidas. Espera un momento antes de volver a preguntar."
+    );
+  }
+
   const apiKey = process.env.GEMINI_API_KEY?.trim();
   if (!apiKey) {
     console.error("[api/chat] GEMINI_API_KEY ausente o vacía.");
@@ -168,10 +196,17 @@ export async function POST(request: Request) {
     );
   }
 
-  // Normaliza temario (array legado o texto multilínea) para el prompt
+  // Normaliza temario (array legado o texto multilínea) para el prompt y
+  // resuelve los facilitadores a una sola lista antes de enviarla al modelo.
+  const {
+    instructorNames,
+    legacyInstructorName,
+    ...courseRest
+  } = courseData;
   const courseForPrompt = {
-    ...courseData,
+    ...courseRest,
     features: normalizeFeaturesList(courseData.features),
+    facilitadores: resolveInstructorNames(instructorNames, legacyInstructorName),
   };
 
   const systemPrompt = buildSystemInstruction(courseForPrompt);

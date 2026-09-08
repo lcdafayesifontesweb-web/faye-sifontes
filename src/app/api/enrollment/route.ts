@@ -7,10 +7,48 @@ import {
   resolveSiteOrigin,
 } from "@/lib/enrollmentEmails";
 
+import {
+  checkRateLimit,
+  getClientIp,
+  tooManyRequests,
+} from "@/lib/rateLimit";
+
 export const runtime = "nodejs";
+
+/** Inscribirse es una accion deliberada: 5 por hora por IP sobra. */
+const RATE_LIMIT = 5;
+const RATE_WINDOW_MS = 60 * 60 * 1000;
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 const ALLOWED_MIME = new Set(["image/jpeg", "image/jpg", "image/png"]);
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
+
+/**
+ * `proof.type` lo declara el navegador: se puede falsificar. Comprobamos los
+ * primeros bytes para confirmar que el comprobante es de verdad un JPG o PNG
+ * y no otro contenido subido al CDN publico de Sanity con extension de imagen.
+ */
+function hasImageSignature(buffer: Buffer): boolean {
+  const isJpeg =
+    buffer.length > 3 &&
+    buffer[0] === 0xff &&
+    buffer[1] === 0xd8 &&
+    buffer[2] === 0xff;
+
+  const isPng =
+    buffer.length > 8 &&
+    buffer[0] === 0x89 &&
+    buffer[1] === 0x50 &&
+    buffer[2] === 0x4e &&
+    buffer[3] === 0x47 &&
+    buffer[4] === 0x0d &&
+    buffer[5] === 0x0a &&
+    buffer[6] === 0x1a &&
+    buffer[7] === 0x0a;
+
+  return isJpeg || isPng;
+}
 
 type EnrollmentCreateDoc = {
   _type: "enrollment";
@@ -36,6 +74,18 @@ function badRequest(message: string) {
 }
 
 export async function POST(request: Request) {
+  const limit = checkRateLimit(
+    `enrollment:${getClientIp(request)}`,
+    RATE_LIMIT,
+    RATE_WINDOW_MS
+  );
+  if (!limit.allowed) {
+    return tooManyRequests(
+      limit.retryAfter,
+      "Demasiados intentos de inscripcion. Espera un momento e intenta de nuevo."
+    );
+  }
+
   let writeClient;
   try {
     writeClient = getWriteClient();
@@ -79,6 +129,9 @@ export async function POST(request: Request) {
   if (!studentName || !idCard || !phone || !email) {
     return badRequest("Completa todos los datos del estudiante.");
   }
+  if (!EMAIL_PATTERN.test(email)) {
+    return badRequest("Ingresa un correo electrónico válido.");
+  }
   if (!courseId) {
     return badRequest("Falta el curso de la inscripción.");
   }
@@ -107,6 +160,11 @@ export async function POST(request: Request) {
 
   try {
     const buffer = Buffer.from(await proof.arrayBuffer());
+    if (!hasImageSignature(buffer)) {
+      return badRequest(
+        "El comprobante no es una imagen JPG o PNG válida. Vuelve a adjuntarlo."
+      );
+    }
     const contentType = mime === "image/jpg" ? "image/jpeg" : mime;
 
     const asset = await writeClient.assets.upload("image", buffer, {
@@ -151,7 +209,7 @@ export async function POST(request: Request) {
       /* optional for email copy */
     }
 
-    const siteOrigin = resolveSiteOrigin(request.url);
+    const siteOrigin = resolveSiteOrigin();
 
     // IMPORTANTE: await (no void). En Vercel, el work en background tras el
     // response se corta y los correos no llegan aunque la inscripción sí se guarde.

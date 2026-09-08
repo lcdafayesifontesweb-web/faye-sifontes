@@ -19,6 +19,13 @@ export const ALL_COURSES_QUERY = `*[_type == "course"] | order(_createdAt desc) 
   featured,
   certifiedBy,
   coverImage,
+  instructors[]->{
+    _id,
+    name,
+    role,
+    bio,
+    photo
+  },
   instructor->{
     _id,
     name,
@@ -60,6 +67,13 @@ export const COURSE_BY_SLUG_QUERY = `*[_type == "course" && slug.current == $slu
     ...,
     alt
   },
+  instructors[]->{
+    _id,
+    name,
+    role,
+    bio,
+    photo
+  },
   instructor->{
     _id,
     name,
@@ -70,17 +84,6 @@ export const COURSE_BY_SLUG_QUERY = `*[_type == "course" && slug.current == $slu
 }`;
 
 export const ALL_COURSE_SLUGS_QUERY = `*[_type == "course" && defined(slug.current)].slug.current`;
-
-export const SEARCH_COURSES_QUERY = `*[_type == "course" && (
-  title match $pattern ||
-  description match $pattern ||
-  category match $pattern
-)] | order(_createdAt desc) [0...8] {
-  _id,
-  title,
-  "slug": slug.current,
-  date
-}`;
 
 const MODALITY_LABELS: Record<string, string> = {
   presencial: "Presencial",
@@ -112,7 +115,7 @@ export interface HomeCourse {
   featured: boolean;
   imageGradient: string;
   coverImageUrl?: string;
-  instructorName?: string;
+  instructorNames: string[];
   certifiedBy?: string;
 }
 
@@ -163,7 +166,7 @@ export interface CoursePageData {
   imageGradient: string;
   coverImageUrl?: string;
   gallery: { url: string; alt: string }[];
-  instructor?: CoursePageInstructor;
+  instructors: CoursePageInstructor[];
   certifiedBy?: string;
 }
 
@@ -182,6 +185,18 @@ function getInitials(name: string): string {
     .map((w) => w[0])
     .join("")
     .toUpperCase();
+}
+
+/**
+ * Facilitadores del curso. Prefiere `instructors`; si el curso todavía no fue
+ * migrado, cae al campo `instructor` de un solo facilitador.
+ */
+function resolveCourseInstructors(course: SanityCourse): SanityInstructor[] {
+  const list = (course.instructors ?? []).filter(
+    (entry): entry is SanityInstructor => Boolean(entry?._id)
+  );
+  if (list.length > 0) return list;
+  return course.instructor?._id ? [course.instructor] : [];
 }
 
 function mapSanityCourse(course: SanityCourse): HomeCourse {
@@ -205,7 +220,7 @@ function mapSanityCourse(course: SanityCourse): HomeCourse {
     coverImageUrl: course.coverImage
       ? urlFor(course.coverImage).width(800).height(400).url()
       : undefined,
-    instructorName: course.instructor?.name,
+    instructorNames: resolveCourseInstructors(course).map((i) => i.name),
     certifiedBy: course.certifiedBy,
   };
 }
@@ -247,9 +262,9 @@ function mapGalleryImages(
 }
 
 function mapSanityCoursePage(course: SanityCourse): CoursePageData {
-  const instructor = course.instructor
-    ? mapSanityInstructor(course.instructor, 0)
-    : undefined;
+  const instructors = resolveCourseInstructors(course).map((entry, index) =>
+    mapSanityInstructor(entry, index)
+  );
 
   return {
     id: course._id,
@@ -272,17 +287,15 @@ function mapSanityCoursePage(course: SanityCourse): CoursePageData {
       ? urlFor(course.coverImage).width(1200).height(600).url()
       : undefined,
     gallery: mapGalleryImages(course.gallery, course.title),
-    instructor: instructor
-      ? {
-          id: instructor.id,
-          name: instructor.name,
-          role: instructor.role,
-          bio: instructor.bio,
-          photoUrl: instructor.photoUrl,
-          avatarInitials: instructor.avatarInitials,
-          avatarColor: instructor.avatarColor,
-        }
-      : undefined,
+    instructors: instructors.map((instructor) => ({
+      id: instructor.id,
+      name: instructor.name,
+      role: instructor.role,
+      bio: instructor.bio,
+      photoUrl: instructor.photoUrl,
+      avatarInitials: instructor.avatarInitials,
+      avatarColor: instructor.avatarColor,
+    })),
     certifiedBy: course.certifiedBy,
   };
 }
@@ -309,22 +322,4 @@ export async function getCourseBySlug(
 
 export async function getAllCourseSlugs(): Promise<string[]> {
   return client.fetch<string[]>(ALL_COURSE_SLUGS_QUERY);
-}
-
-export async function searchCoursesFromSanity(
-  query: string
-): Promise<SearchCourseItem[]> {
-  const q = query.trim();
-  if (q.length < 2) return [];
-
-  const results = await client.fetch<
-    { _id: string; slug: string; title: string; date: string }[]
-  >(SEARCH_COURSES_QUERY, { pattern: `*${q}*` });
-
-  return results.map((c) => ({
-    id: c._id,
-    slug: c.slug,
-    title: c.title,
-    date: c.date,
-  }));
 }

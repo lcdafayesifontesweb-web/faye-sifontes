@@ -6,6 +6,7 @@ import {
   resolveSiteOrigin,
   type CourseEmailInfo,
 } from "@/lib/enrollmentEmails";
+import { resolveInstructorNames } from "@/lib/instructors";
 
 export const runtime = "nodejs";
 
@@ -22,6 +23,9 @@ type EnrollmentWebhookPayload = {
     date?: string;
     schedule?: string;
     modality?: string;
+    // La proyeccion del webhook se configura en Sanity, fuera del repo:
+    // aceptamos el campo nuevo y el antiguo para no depender de ese cambio.
+    instructorNames?: string[];
     instructorName?: string;
   } | null;
 };
@@ -84,7 +88,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const siteOrigin = resolveSiteOrigin(request.url);
+  const siteOrigin = resolveSiteOrigin();
   const courseTitle = doc.course?.title;
 
   let result;
@@ -95,7 +99,10 @@ export async function POST(request: Request) {
       date: doc.course?.date,
       schedule: doc.course?.schedule,
       modality: doc.course?.modality,
-      instructorName: doc.course?.instructorName,
+      instructorNames: resolveInstructorNames(
+        doc.course?.instructorNames,
+        doc.course?.instructorName
+      ),
     };
     result = await notifyStudentApproved({
       studentName,

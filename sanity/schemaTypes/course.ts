@@ -115,11 +115,41 @@ export const course = defineType({
       validation: (rule) => rule.required().min(1),
     }),
     defineField({
+      name: "instructors",
+      title: "Facilitadores",
+      type: "array",
+      description: "Hasta 3 facilitadores. Se muestran en el orden que los coloques.",
+      of: [
+        defineArrayMember({
+          type: "reference",
+          to: [{ type: "instructor" }],
+        }),
+      ],
+      validation: (rule) =>
+        rule
+          .max(3)
+          .unique()
+          .custom((value, context) => {
+            // Los cursos creados antes de este campo guardan un solo
+            // facilitador en `instructor`; no los marcamos como inválidos.
+            const legacy = (context.document as { instructor?: unknown })
+              ?.instructor;
+            const count = Array.isArray(value) ? value.length : 0;
+            if (count === 0 && !legacy) {
+              return "Agrega al menos un facilitador.";
+            }
+            return true;
+          }),
+    }),
+    defineField({
       name: "instructor",
-      title: "Facilitador",
+      title: "Facilitador (campo anterior)",
       type: "reference",
       to: [{ type: "instructor" }],
-      validation: (rule) => rule.required(),
+      description:
+        "Reemplazado por Facilitadores. Se conserva solo para los cursos que aún no fueron migrados.",
+      readOnly: true,
+      hidden: ({ document }) => !document?.instructor,
     }),
     defineField({
       name: "coverImage",

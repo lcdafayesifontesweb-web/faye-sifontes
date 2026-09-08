@@ -36,5 +36,8 @@ export interface SanityCourse {
   certifiedBy?: string;
   coverImage?: SanityImage;
   gallery?: SanityImage[];
+  /** Hasta 3 facilitadores. Campo vigente. */
+  instructors?: SanityInstructor[];
+  /** Legado: un solo facilitador, en cursos anteriores a `instructors`. */
   instructor?: SanityInstructor;
 }

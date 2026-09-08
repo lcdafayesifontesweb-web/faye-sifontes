@@ -41,8 +41,18 @@ export type CourseEmailInfo = {
   date?: string;
   schedule?: string;
   modality?: string;
-  instructorName?: string;
+  instructorNames?: string[];
 };
+
+/** "Facilitador" o "Facilitadores" segun cuantos tenga el curso. */
+function instructorLabel(names?: string[]): string {
+  return (names?.length ?? 0) > 1 ? "Facilitadores" : "Facilitador";
+}
+
+function formatInstructors(names?: string[]): string {
+  const list = (names ?? []).map((n) => n.trim()).filter(Boolean);
+  return list.length > 0 ? list.join(", ") : "—";
+}
 
 function escapeHtml(value: string): string {
   return value
@@ -230,7 +240,7 @@ export function buildStudentApprovedHtml(params: {
         ${detailRow("Horario", course.schedule || "—", true)}
         ${detailRow("Modalidad", modalityLabel)}
         ${detailRow("Lugar", place, true)}
-        ${detailRow("Facilitador", course.instructorName || "—")}
+        ${detailRow(instructorLabel(course.instructorNames), formatInstructors(course.instructorNames))}
       </table>
       ${
         course.description
@@ -329,7 +339,7 @@ async function sendEmail(params: {
 
 const DEFAULT_SITE_ORIGIN = "https://www.lcdafayesifontes.com";
 
-export function resolveSiteOrigin(_requestUrl?: string): string {
+export function resolveSiteOrigin(): string {
   // Siempre preferir el dominio público. Nunca usar VERCEL_URL en correos:
   // en previews es una URL efímera (*.vercel.app) que rompe el botón y el logo.
   // Usar www: el apex redirige con 308 y muchos clientes de correo no siguen
@@ -430,7 +440,7 @@ export async function notifyStudentApproved(params: {
       `Horario: ${params.course.schedule || "—"}`,
       `Modalidad: ${MODALITY_LABELS[params.course.modality ?? ""] ?? params.course.modality ?? "—"}`,
       `Lugar: ${getPlaceLabel(params.course.modality)}`,
-      `Facilitador: ${params.course.instructorName || "—"}`,
+      `${instructorLabel(params.course.instructorNames)}: ${formatInstructors(params.course.instructorNames)}`,
       "",
       "Recomendación: llega con 20 minutos de anticipación para registro y organización.",
       "",
