@@ -119,6 +119,14 @@ export interface HomeCourse {
   certifiedBy?: string;
 }
 
+export interface GalleryImage {
+  /** Miniatura recortada para la cuadricula. */
+  url: string;
+  /** Imagen completa, sin recortar, para verla ampliada. */
+  fullUrl: string;
+  alt: string;
+}
+
 export interface SearchCourseItem {
   id: string;
   slug: string;
@@ -165,7 +173,7 @@ export interface CoursePageData {
   featured: boolean;
   imageGradient: string;
   coverImageUrl?: string;
-  gallery: { url: string; alt: string }[];
+  gallery: GalleryImage[];
   instructors: CoursePageInstructor[];
   certifiedBy?: string;
 }
@@ -251,12 +259,16 @@ function mapSanityInstructor(
 function mapGalleryImages(
   gallery: SanityCourse["gallery"],
   courseTitle: string
-): { url: string; alt: string }[] {
+): GalleryImage[] {
   if (!gallery?.length) return [];
   return gallery
     .filter((img) => img?.asset?._ref)
     .map((img, index) => ({
+      // Miniatura recortada para la cuadricula.
       url: urlFor(img).width(800).height(600).url(),
+      // Version ampliada: `fit("max")` respeta la proporcion, asi que al
+      // abrirla se ve la foto completa y no el recorte de la miniatura.
+      fullUrl: urlFor(img).width(1600).fit("max").url(),
       alt: img.alt ?? `${courseTitle} — foto ${index + 1}`,
     }));
 }
