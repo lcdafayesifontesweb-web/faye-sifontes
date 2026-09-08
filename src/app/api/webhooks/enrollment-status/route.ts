@@ -17,6 +17,7 @@ type EnrollmentWebhookPayload = {
   email?: string;
   status?: string;
   statusEmailSent?: string | null;
+  paymentModality?: "online" | "presencial";
   course?: {
     title?: string;
     description?: string;
@@ -99,6 +100,7 @@ export async function POST(request: Request) {
       date: doc.course?.date,
       schedule: doc.course?.schedule,
       modality: doc.course?.modality,
+      purchasedModality: doc.paymentModality,
       instructorNames: resolveInstructorNames(
         doc.course?.instructorNames,
         doc.course?.instructorName

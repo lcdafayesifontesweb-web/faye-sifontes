@@ -229,6 +229,7 @@ export async function POST(request: Request) {
         studentName,
         email: email.toLowerCase(),
         courseTitle,
+        purchasedModality: paymentModality,
         siteOrigin,
       }),
     ]);

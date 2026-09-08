@@ -27,6 +27,8 @@ type EnrollmentDoc = {
   email?: string;
   status?: string;
   statusEmailSent?: string | null;
+  /** Modalidad que el alumno realmente pago. */
+  paymentModality?: "online" | "presencial";
   course?: {
     title?: string;
     description?: string;
@@ -93,6 +95,7 @@ export async function POST(request: Request) {
       email,
       status,
       statusEmailSent,
+      paymentModality,
       course->{
         title,
         description,
@@ -172,6 +175,7 @@ export async function POST(request: Request) {
       date: doc.course?.date,
       schedule: doc.course?.schedule,
       modality: doc.course?.modality,
+      purchasedModality: doc.paymentModality,
       instructorNames: resolveInstructorNames(
         doc.course?.instructorNames,
         doc.course?.legacyInstructorName

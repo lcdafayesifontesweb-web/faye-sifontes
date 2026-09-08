@@ -815,8 +815,7 @@ export default function CourseLanding({ course }: CourseLandingProps) {
             onClick={scrollToRegistration}
             className="block w-full text-center py-3.5 rounded-xl bg-brand-blue text-white font-bold cta-pulse"
           >
-            Reserva tu lugar — ${selectedUsd} {modalityLabel}
-            {selectedBs != null ? ` | Bs. ${formatBs(selectedBs)}` : ""}
+            Reserva tu lugar
           </button>
         </div>
       )}

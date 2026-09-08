@@ -35,14 +35,39 @@ const MODALITY_LABELS: Record<string, string> = {
   mixto: "Presencial y En vivo por Zoom",
 };
 
+export type PurchasedModality = "online" | "presencial";
+
 export type CourseEmailInfo = {
   title: string;
   description?: string;
   date?: string;
-  schedule?: string;
+  /** Modalidades que ofrece el curso (presencial | zoom | mixto). */
   modality?: string;
+  schedule?: string;
+  /**
+   * Lo que el alumno realmente contrato. Manda sobre `modality`: un curso
+   * mixto ofrece las dos opciones, pero el alumno pago solo una y el correo
+   * debe nombrar esa, no las dos.
+   */
+  purchasedModality?: PurchasedModality;
   instructorNames?: string[];
 };
+
+export function purchasedModalityLabel(
+  purchased?: PurchasedModality
+): string | null {
+  if (purchased === "online") return "Online (en vivo por Zoom)";
+  if (purchased === "presencial") return "Presencial";
+  return null;
+}
+
+function purchasedPlaceLabel(purchased?: PurchasedModality): string | null {
+  if (purchased === "online") {
+    return "En vivo por Zoom (el enlace se enviará por WhatsApp/correo)";
+  }
+  if (purchased === "presencial") return BRAND.address;
+  return null;
+}
 
 /** "Facilitador" o "Facilitadores" segun cuantos tenga el curso. */
 function instructorLabel(names?: string[]): string {
@@ -184,10 +209,17 @@ export function buildStudentReceivedHtml(params: {
   studentName: string;
   logoUrl: string;
   courseTitle?: string;
+  purchasedModality?: PurchasedModality;
 }): string {
   const firstName = params.studentName.split(/\s+/)[0] || params.studentName;
   const courseLine = params.courseTitle
     ? ` para el curso <strong>${escapeHtml(params.courseTitle)}</strong>`
+    : "";
+  const modalityLabel = purchasedModalityLabel(params.purchasedModality);
+  const modalityBlock = modalityLabel
+    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;margin:0 0 16px;">
+        ${detailRow("Modalidad inscrita", modalityLabel, true)}
+      </table>`
     : "";
 
   return emailShell({
@@ -203,6 +235,7 @@ export function buildStudentReceivedHtml(params: {
         Nuestro equipo lo está revisando y te notificaremos por este correo
         cuando el pago quede confirmado o si necesitamos verificar algo.
       </p>
+      ${modalityBlock}
       <p style="margin:0;font-size:15px;line-height:1.6;color:#475569;">
         Si tienes dudas, escríbenos al WhatsApp
         <strong>${escapeHtml(BRAND.phone)}</strong>.
@@ -218,9 +251,16 @@ export function buildStudentApprovedHtml(params: {
 }): string {
   const { studentName, logoUrl, course } = params;
   const firstName = studentName.split(/\s+/)[0] || studentName;
+  // Si conocemos lo que contrato el alumno mostramos solo eso; el dato del
+  // curso queda como respaldo para inscripciones viejas sin ese campo.
   const modalityLabel =
-    MODALITY_LABELS[course.modality ?? ""] ?? course.modality ?? "—";
-  const place = getPlaceLabel(course.modality);
+    purchasedModalityLabel(course.purchasedModality) ??
+    MODALITY_LABELS[course.modality ?? ""] ??
+    course.modality ??
+    "—";
+  const place =
+    purchasedPlaceLabel(course.purchasedModality) ??
+    getPlaceLabel(course.modality);
 
   return emailShell({
     logoUrl,
@@ -392,6 +432,7 @@ export async function notifyStudentReceived(params: {
   studentName: string;
   email: string;
   courseTitle?: string;
+  purchasedModality?: PurchasedModality;
   siteOrigin: string;
 }): Promise<SendEmailResult> {
   return sendEmail({
@@ -400,6 +441,7 @@ export async function notifyStudentReceived(params: {
     html: buildStudentReceivedHtml({
       studentName: params.studentName,
       courseTitle: params.courseTitle,
+      purchasedModality: params.purchasedModality,
       logoUrl: getLogoUrl(params.siteOrigin),
     }),
     text: [
@@ -409,6 +451,9 @@ export async function notifyStudentReceived(params: {
         ? `Recibimos tu inscripción al curso "${params.courseTitle}" y tu comprobante de pago.`
         : "Recibimos tu inscripción y tu comprobante de pago.",
       "",
+      ...(purchasedModalityLabel(params.purchasedModality)
+        ? [`Modalidad inscrita: ${purchasedModalityLabel(params.purchasedModality)}`, ""]
+        : []),
       "Estamos verificando el pago con el banco. Te escribiremos a este mismo correo en cuanto quede confirmado.",
       "",
       BRAND.company,
@@ -438,8 +483,16 @@ export async function notifyStudentApproved(params: {
       `Curso: ${params.course.title || "—"}`,
       `Fecha: ${params.course.date || "—"}`,
       `Horario: ${params.course.schedule || "—"}`,
-      `Modalidad: ${MODALITY_LABELS[params.course.modality ?? ""] ?? params.course.modality ?? "—"}`,
-      `Lugar: ${getPlaceLabel(params.course.modality)}`,
+      `Modalidad: ${
+        purchasedModalityLabel(params.course.purchasedModality) ??
+        MODALITY_LABELS[params.course.modality ?? ""] ??
+        params.course.modality ??
+        "—"
+      }`,
+      `Lugar: ${
+        purchasedPlaceLabel(params.course.purchasedModality) ??
+        getPlaceLabel(params.course.modality)
+      }`,
       `${instructorLabel(params.course.instructorNames)}: ${formatInstructors(params.course.instructorNames)}`,
       "",
       "Recomendación: llega con 20 minutos de anticipación para registro y organización.",
