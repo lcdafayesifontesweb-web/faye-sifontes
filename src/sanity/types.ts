@@ -23,6 +23,8 @@ export interface SanityCourse {
   category: string;
   description: string;
   date: string;
+  /** Instante ISO de inicio. Solo alimenta la cuenta regresiva. */
+  startsAt?: string;
   schedule: string;
   modality: string;
   /** Legado: string[]; nuevo: texto multilínea */

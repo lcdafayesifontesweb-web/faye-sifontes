@@ -10,6 +10,7 @@ export const ALL_COURSES_QUERY = `*[_type == "course"] | order(_createdAt desc) 
   category,
   description,
   date,
+  startsAt,
   schedule,
   modality,
   features,
@@ -54,6 +55,7 @@ export const COURSE_BY_SLUG_QUERY = `*[_type == "course" && slug.current == $slu
   category,
   description,
   date,
+  startsAt,
   schedule,
   modality,
   features,
@@ -162,6 +164,8 @@ export interface CoursePageData {
   title: string;
   description: string;
   date: string;
+  /** Instante ISO de inicio; ausente si la fecha no esta confirmada. */
+  startsAt?: string;
   schedule: string;
   /** Valor crudo de Sanity: presencial | zoom | mixto */
   modality: string;
@@ -284,6 +288,7 @@ function mapSanityCoursePage(course: SanityCourse): CoursePageData {
     title: course.title,
     description: course.description,
     date: course.date,
+    startsAt: course.startsAt,
     schedule: course.schedule,
     modality: course.modality ?? "",
     modalityLabel: MODALITY_LABELS[course.modality] ?? course.modality,

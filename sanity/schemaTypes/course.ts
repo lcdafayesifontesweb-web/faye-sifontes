@@ -64,6 +64,29 @@ export const course = defineType({
       validation: (rule) => rule.required(),
     }),
     defineField({
+      name: "startsAt",
+      title: "Inicio exacto (para la cuenta regresiva)",
+      type: "datetime",
+      description:
+        'Opcional y solo para el reloj de cuenta regresiva. No se muestra en la página: el texto visible sigue siendo el campo "Fecha". Si el curso tiene varias fechas, pon la primera. Déjalo vacío mientras la fecha esté por confirmar y no aparecerá ningún contador.',
+      options: {
+        dateFormat: "DD/MM/YYYY",
+        timeFormat: "h:mm a",
+        timeStep: 15,
+      },
+      validation: (rule) =>
+        rule.custom((value, context) => {
+          if (!value) return true;
+          // Aviso, no error: evita que el reloj cuente hacia una fecha que el
+          // texto visible todavía anuncia como pendiente.
+          const texto = (context.document as { date?: string })?.date ?? "";
+          if (/por\s+confirmar/i.test(texto)) {
+            return 'Pusiste un inicio exacto pero el campo "Fecha" sigue diciendo "Por confirmar". Actualiza el texto visible.';
+          }
+          return true;
+        }).warning(),
+    }),
+    defineField({
       name: "schedule",
       title: "Horario",
       type: "string",

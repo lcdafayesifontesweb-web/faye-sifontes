@@ -31,6 +31,7 @@ import {
   type PurchaseModality,
 } from "@/lib/modality";
 import CertificationBadge from "./CertificationBadge";
+import CourseCountdown from "./CourseCountdown";
 import CourseGallery from "./CourseGallery";
 import SmartChatbox from "./SmartChatbox";
 import SmartNavLink from "./SmartNavLink";
@@ -306,6 +307,7 @@ export default function CourseLanding({ course }: CourseLandingProps) {
             <div className="w-full max-w-full min-w-0 bg-white/10 backdrop-blur-md rounded-3xl border border-white/20 p-5 sm:p-7 space-y-5 overflow-hidden">
               <h2 className="text-lg font-bold text-white mb-2">Ficha del Curso</h2>
               <FichaItem icon={Calendar} label="Fecha" value={course.date} />
+              <CourseCountdown startsAt={course.startsAt} />
               <FichaItem icon={Clock} label="Horario" value={course.schedule} />
               <FichaItem icon={MapPin} label="Modalidad" value={course.modalityLabel} />
               {instructors.length > 0 && (
