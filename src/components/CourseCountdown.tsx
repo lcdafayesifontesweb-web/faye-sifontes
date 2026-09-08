@@ -6,6 +6,11 @@ import { CalendarClock } from "lucide-react";
 interface CourseCountdownProps {
   /** Instante ISO de inicio. Si falta, no se renderiza nada. */
   startsAt?: string;
+  /**
+   * "ficha": bloque de la Ficha del Curso, alineado con el resto de campos.
+   * "tarjeta": pastilla compacta para la tarjeta del listado.
+   */
+  variant?: "ficha" | "tarjeta";
 }
 
 type Remaining = {
@@ -35,7 +40,10 @@ function getRemaining(target: number, now: number): Remaining | null {
  * revalida cada 60 s, así que pintar la hora ahí daría un valor viejo y una
  * discrepancia de hidratación. Hasta que monta no ocupa espacio.
  */
-export default function CourseCountdown({ startsAt }: CourseCountdownProps) {
+export default function CourseCountdown({
+  startsAt,
+  variant = "ficha",
+}: CourseCountdownProps) {
   const target = startsAt ? new Date(startsAt).getTime() : NaN;
   const valido = Number.isFinite(target);
 
@@ -58,6 +66,20 @@ export default function CourseCountdown({ startsAt }: CourseCountdownProps) {
   // Al llegar a cero el contador simplemente desaparece: es informativo, no
   // cambia nada de la venta ni del estado del curso.
   if (!valido || !mounted || !remaining) return null;
+
+  if (variant === "tarjeta") {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-black/45 backdrop-blur-sm px-2.5 py-1 text-white ring-1 ring-white/20">
+        <CalendarClock className="w-3.5 h-3.5 text-brand-300 shrink-0" />
+        <span className="text-xs font-semibold tabular-nums">
+          {remaining.dias > 0 && `${remaining.dias}d `}
+          {String(remaining.horas).padStart(2, "0")}h{" "}
+          {String(remaining.minutos).padStart(2, "0")}m{" "}
+          {String(remaining.segundos).padStart(2, "0")}s
+        </span>
+      </span>
+    );
+  }
 
   return (
     <div className="flex items-start gap-3 min-w-0">

@@ -113,6 +113,7 @@ export default function Footer() {
               <li>
                 <SmartNavLink
                   sectionId="cursos"
+                  homeQuery="destacados=1"
                   className="text-white/70 hover:text-white transition-colors"
                 >
                   Cursos destacados

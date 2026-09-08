@@ -15,6 +15,7 @@ import type { HomeCourse } from "@/sanity/queries";
 import { categories, type CourseArea } from "@/data/coursesData";
 import { normalizeFeaturesList } from "@/lib/features";
 import CertificationBadge from "./CertificationBadge";
+import CourseCountdown from "./CourseCountdown";
 
 const PAGE_SIZE = 6;
 
@@ -27,6 +28,7 @@ export default function FeaturedCourses({ courses }: FeaturedCoursesProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const categoriaParam = searchParams.get("categoria");
+  const soloDestacados = searchParams.get("destacados") === "1";
 
   const activeCategory = useMemo(() => {
     if (!categoriaParam) return null;
@@ -35,18 +37,22 @@ export default function FeaturedCourses({ courses }: FeaturedCoursesProps) {
   }, [categoriaParam]);
 
   const filtered = useMemo(() => {
-    if (!activeCategory) return courses;
-    return courses.filter((c) => c.category === activeCategory);
-  }, [courses, activeCategory]);
+    let lista = courses;
+    if (soloDestacados) lista = lista.filter((c) => c.featured);
+    if (activeCategory) {
+      lista = lista.filter((c) => c.category === activeCategory);
+    }
+    return lista;
+  }, [courses, activeCategory, soloDestacados]);
 
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
-  }, [activeCategory]);
+  }, [activeCategory, soloDestacados]);
 
   useEffect(() => {
-    if (!categoriaParam) return;
+    if (!categoriaParam && !soloDestacados) return;
     // Scroll limpio sin hash (el filtro ya está en ?categoria=)
     const t = window.setTimeout(() => {
       document.getElementById("cursos")?.scrollIntoView({
@@ -55,7 +61,7 @@ export default function FeaturedCourses({ courses }: FeaturedCoursesProps) {
       });
     }, 50);
     return () => window.clearTimeout(t);
-  }, [categoriaParam]);
+  }, [categoriaParam, soloDestacados]);
 
   const visibleCourses = filtered.slice(0, visibleCount);
   const hasMore = visibleCount < filtered.length;
@@ -70,8 +76,17 @@ export default function FeaturedCourses({ courses }: FeaturedCoursesProps) {
       clearFilter();
       return;
     }
+    // Elegir una categoria sale del filtro de destacados.
     router.push(`${pathname}?categoria=${id}`, { scroll: false });
   };
+
+  const toggleDestacados = () => {
+    router.push(soloDestacados ? pathname : `${pathname}?destacados=1`, {
+      scroll: false,
+    });
+  };
+
+  const hayDestacados = courses.some((c) => c.featured);
 
   if (courses.length === 0) {
     return (
@@ -95,18 +110,29 @@ export default function FeaturedCourses({ courses }: FeaturedCoursesProps) {
               Nuestros Cursos
             </h2>
             <p className="mt-2 text-slate-600">
-              {activeCategory
-                ? `${filtered.length} curso${filtered.length !== 1 ? "s" : ""} en ${activeLabel}`
-                : `${courses.length} cursos disponibles`}
+              {describirResultado({
+                total: courses.length,
+                encontrados: filtered.length,
+                categoria: activeLabel,
+                soloDestacados,
+              })}
             </p>
           </div>
 
           <div className="flex flex-wrap gap-2">
             <FilterPill
               label="Todos"
-              active={!activeCategory}
+              active={!activeCategory && !soloDestacados}
               onClick={() => selectCategory(null)}
             />
+            {hayDestacados && (
+              <FilterPill
+                label="Destacados"
+                active={soloDestacados}
+                icon={<Star className="w-3.5 h-3.5 fill-current" />}
+                onClick={toggleDestacados}
+              />
+            )}
             {categories.map((cat) => (
               <FilterPill
                 key={cat.id}
@@ -120,7 +146,11 @@ export default function FeaturedCourses({ courses }: FeaturedCoursesProps) {
 
         {filtered.length === 0 ? (
           <div className="text-center py-16 text-slate-500">
-            <p className="mb-4">No hay cursos en esta categoría por ahora.</p>
+            <p className="mb-4">
+              {soloDestacados
+                ? "No hay cursos destacados por ahora."
+                : "No hay cursos en esta categoría por ahora."}
+            </p>
             <button
               type="button"
               onClick={clearFilter}
@@ -169,25 +199,52 @@ export default function FeaturedCourses({ courses }: FeaturedCoursesProps) {
   );
 }
 
+/** Texto que resume que se esta mostrando, segun los filtros activos. */
+function describirResultado({
+  total,
+  encontrados,
+  categoria,
+  soloDestacados,
+}: {
+  total: number;
+  encontrados: number;
+  categoria?: string;
+  soloDestacados: boolean;
+}): string {
+  const plural = encontrados !== 1 ? "s" : "";
+  if (soloDestacados && categoria) {
+    return `${encontrados} curso${plural} destacado${plural} en ${categoria}`;
+  }
+  if (soloDestacados) {
+    return `${encontrados} curso${plural} destacado${plural}`;
+  }
+  if (categoria) return `${encontrados} curso${plural} en ${categoria}`;
+  return `${total} cursos disponibles`;
+}
+
 function FilterPill({
   label,
   active,
   onClick,
+  icon,
 }: {
   label: string;
   active: boolean;
   onClick: () => void;
+  icon?: React.ReactNode;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
+      aria-pressed={active}
+      className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
         active
           ? "bg-brand-blue text-white shadow-sm"
           : "bg-slate-100 text-slate-700 hover:bg-brand-50 hover:text-brand-700"
       }`}
     >
+      {icon}
       {label}
     </button>
   );
@@ -195,7 +252,13 @@ function FilterPill({
 
 function CourseCard({ course }: { course: HomeCourse }) {
   return (
-    <article className="group relative bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-lg hover:shadow-2xl transition-all duration-300 h-full flex flex-col">
+    <article
+      className={`group relative bg-white rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 h-full flex flex-col ${
+        course.featured
+          ? "border-2 border-brand-blue ring-1 ring-brand-blue/20"
+          : "border border-slate-100"
+      }`}
+    >
       <div
         className={`h-44 bg-gradient-to-br ${course.imageGradient} relative p-5 flex flex-col justify-between overflow-hidden`}
       >
@@ -208,16 +271,17 @@ function CourseCard({ course }: { course: HomeCourse }) {
             sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
           />
         )}
-        <div className="relative flex items-center justify-between">
-          {course.featured ? (
-            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/20 backdrop-blur text-white text-xs font-semibold">
-              <Star className="w-3 h-3 fill-brand-blue text-brand-blue" />
-              Destacado
-            </span>
-          ) : (
-            <span />
-          )}
-          <span className="text-white/90 text-xs sm:text-sm font-bold text-right leading-tight">
+        <div className="relative flex items-start justify-between gap-3">
+          <div className="flex flex-col items-start gap-2 min-w-0">
+            {course.featured && (
+              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/20 backdrop-blur text-white text-xs font-semibold">
+                <Star className="w-3 h-3 fill-brand-blue text-brand-blue" />
+                Destacado
+              </span>
+            )}
+            <CourseCountdown startsAt={course.startsAt} variant="tarjeta" />
+          </div>
+          <span className="text-white/90 text-xs sm:text-sm font-bold text-right leading-tight shrink-0">
             Online ${course.priceOnline}
             <br />
             Presencial ${course.price}

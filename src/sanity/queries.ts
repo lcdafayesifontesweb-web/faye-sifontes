@@ -3,7 +3,8 @@ import { urlFor } from "./image";
 import type { SanityCourse, SanityInstructor } from "./types";
 import { normalizeFeaturesList } from "@/lib/features";
 
-export const ALL_COURSES_QUERY = `*[_type == "course"] | order(_createdAt desc) {
+export const ALL_COURSES_QUERY = `*[_type == "course"]
+  | order(coalesce(featured, false) desc, _createdAt desc) {
   _id,
   title,
   "slug": slug.current,
@@ -115,6 +116,8 @@ export interface HomeCourse {
   priceOnline: number;
   currency: string;
   featured: boolean;
+  /** Instante ISO de inicio; ausente si la fecha no esta confirmada. */
+  startsAt?: string;
   imageGradient: string;
   coverImageUrl?: string;
   instructorNames: string[];
@@ -226,6 +229,7 @@ function mapSanityCourse(course: SanityCourse): HomeCourse {
     priceOnline: course.priceOnline ?? 0,
     currency: course.currency ?? "USD",
     featured: course.featured ?? false,
+    startsAt: course.startsAt,
     imageGradient:
       CATEGORY_GRADIENTS[course.category] ??
       "from-brand-700 via-brand-800 to-brand-900",
