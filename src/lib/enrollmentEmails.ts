@@ -3,7 +3,31 @@ import { BRAND } from "@/data/coursesData";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-export const ADMIN_EMAILS = ["admin@lcdafayesifontes.com"] as const;
+/**
+ * Buzón por defecto para los avisos internos.
+ *
+ * Debe estar en un dominio distinto al del remitente. Cuando el aviso salía de
+ * admin@lcdafayesifontes.com hacia esa misma casilla, Zoho lo aceptaba y luego
+ * lo descartaba por su protección anti-spoofing (mensaje del propio dominio
+ * llegando desde un servidor externo), así que nunca aparecía en la bandeja.
+ * Configurable con ADMIN_NOTIFICATION_EMAILS para cambiarlo sin redesplegar.
+ */
+const DEFAULT_ADMIN_EMAILS = ["lcdafayesifontesweb@gmail.com"];
+
+/** Casilla monitoreada a la que responden los alumnos. */
+const REPLY_TO_EMAIL = "admin@lcdafayesifontes.com";
+
+export function getAdminEmails(): string[] {
+  const raw = process.env.ADMIN_NOTIFICATION_EMAILS?.trim();
+  if (!raw) return DEFAULT_ADMIN_EMAILS;
+
+  const parsed = raw
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.includes("@"));
+
+  return parsed.length > 0 ? parsed : DEFAULT_ADMIN_EMAILS;
+}
 
 const MODALITY_LABELS: Record<string, string> = {
   presencial: "Presencial",
@@ -268,6 +292,9 @@ async function sendEmail(params: {
   to: string | string[];
   subject: string;
   html: string;
+  /** Alternativa en texto plano: enviar solo HTML es una señal de spam. */
+  text: string;
+  replyTo?: string;
 }): Promise<SendEmailResult> {
   if (!process.env.RESEND_API_KEY?.trim()) {
     console.error("[enrollmentEmails] RESEND_API_KEY ausente; correo no enviado.");
@@ -277,8 +304,10 @@ async function sendEmail(params: {
     const result = await resend.emails.send({
       from: getFromAddress(),
       to: Array.isArray(params.to) ? params.to : [params.to],
+      replyTo: params.replyTo ?? REPLY_TO_EMAIL,
       subject: params.subject,
       html: params.html,
+      text: params.text,
     });
     if (result.error) {
       console.error("[enrollmentEmails] Resend error:", result.error);
@@ -323,13 +352,29 @@ export async function notifyAdminsNewEnrollment(params: {
   const logoUrl = getLogoUrl(params.siteOrigin);
   const studioUrl = `${params.siteOrigin}/studio`;
   return sendEmail({
-    to: [...ADMIN_EMAILS],
-    subject: `🚨 Nuevo Pago Móvil por Validar - ${params.studentName}`,
+    to: getAdminEmails(),
+    // Sin emoji: junto a "Pago Móvil" y un monto penalizaba el filtro de spam.
+    subject: `Nueva inscripción por validar - ${params.studentName}`,
+    // Responder al aviso escribe directamente al alumno.
+    replyTo: params.email,
     html: buildAdminPendingHtml({
       ...params,
       studioUrl,
       logoUrl,
     }),
+    text: [
+      "Se registró una inscripción pendiente de verificación en el banco.",
+      "",
+      `Nombre: ${params.studentName}`,
+      `Cédula: ${params.idCard}`,
+      `Teléfono: ${params.phone}`,
+      `Correo: ${params.email}`,
+      ...(params.modalityLabel ? [`Modalidad: ${params.modalityLabel}`] : []),
+      `Referencia: ${params.referenceNumber}`,
+      `Monto pagado: ${params.monto}`,
+      "",
+      `Validar la inscripción: ${studioUrl}`,
+    ].join("\n"),
   });
 }
 
@@ -347,6 +392,17 @@ export async function notifyStudentReceived(params: {
       courseTitle: params.courseTitle,
       logoUrl: getLogoUrl(params.siteOrigin),
     }),
+    text: [
+      `Hola ${params.studentName},`,
+      "",
+      params.courseTitle
+        ? `Recibimos tu inscripción al curso "${params.courseTitle}" y tu comprobante de pago.`
+        : "Recibimos tu inscripción y tu comprobante de pago.",
+      "",
+      "Estamos verificando el pago con el banco. Te escribiremos a este mismo correo en cuanto quede confirmado.",
+      "",
+      BRAND.company,
+    ].join("\n"),
   });
 }
 
@@ -364,6 +420,23 @@ export async function notifyStudentApproved(params: {
       course: params.course,
       logoUrl: getLogoUrl(params.siteOrigin),
     }),
+    text: [
+      `Hola ${params.studentName.split(/\s+/)[0] || params.studentName},`,
+      "",
+      "¡Gracias por inscribirte! Tu pago fue confirmado y tu cupo está reservado.",
+      "",
+      `Curso: ${params.course.title || "—"}`,
+      `Fecha: ${params.course.date || "—"}`,
+      `Horario: ${params.course.schedule || "—"}`,
+      `Modalidad: ${MODALITY_LABELS[params.course.modality ?? ""] ?? params.course.modality ?? "—"}`,
+      `Lugar: ${getPlaceLabel(params.course.modality)}`,
+      `Facilitador: ${params.course.instructorName || "—"}`,
+      "",
+      "Recomendación: llega con 20 minutos de anticipación para registro y organización.",
+      "",
+      `Cualquier consulta por WhatsApp: ${BRAND.phone}`,
+      BRAND.company,
+    ].join("\n"),
   });
 }
 
@@ -381,5 +454,19 @@ export async function notifyStudentRejected(params: {
       courseTitle: params.courseTitle,
       logoUrl: getLogoUrl(params.siteOrigin),
     }),
+    text: [
+      `Hola ${params.studentName.split(/\s+/)[0] || params.studentName},`,
+      "",
+      params.courseTitle
+        ? `Revisamos tu inscripción del curso "${params.courseTitle}" y, por el momento, no pudimos confirmar el pago.`
+        : "Revisamos tu inscripción y, por el momento, no pudimos confirmar el pago.",
+      "Esto puede deberse a una referencia incorrecta, un comprobante ilegible o un monto que no coincide.",
+      "",
+      "Por favor contáctanos para verificar tu pago y completar tu inscripción:",
+      `WhatsApp: ${BRAND.phone}`,
+      `Correo: ${BRAND.email}`,
+      "",
+      BRAND.company,
+    ].join("\n"),
   });
 }

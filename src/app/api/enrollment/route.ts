@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getWriteClient, client as readClient } from "@/sanity/client";
 import {
+  getAdminEmails,
   notifyAdminsNewEnrollment,
   notifyStudentReceived,
   resolveSiteOrigin,
@@ -175,7 +176,10 @@ export async function POST(request: Request) {
     ]);
 
     if (!adminMail.ok) {
-      console.error("[api/enrollment] correo admin falló:", adminMail.error);
+      console.error(
+        `[api/enrollment] AVISO INTERNO NO ENVIADO — inscripción ${doc._id} de ${studentName} quedó sin notificar a ${getAdminEmails().join(", ")}:`,
+        adminMail.error
+      );
     }
     if (!studentMail.ok) {
       console.error("[api/enrollment] correo alumno falló:", studentMail.error);
