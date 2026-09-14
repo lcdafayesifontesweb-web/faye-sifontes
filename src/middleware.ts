@@ -1,7 +1,13 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-/** Código ISO 3166-2 del estado Anzoátegui. */
-const ANZOATEGUI = "VE-B";
+/**
+ * Anzoátegui es `VE-B` en ISO 3166-2, pero Vercel manda solo la parte de
+ * subdivisión: "B", igual que devuelve "NJ" y no "US-NJ". Por eso hay que
+ * comparar el país por separado. Se acepta también el código completo por si
+ * la cabecera cambia de formato.
+ */
+const PAIS = "VE";
+const ANZOATEGUI = ["B", "VE-B"];
 
 /** Lo lee CourseLanding para preseleccionar la modalidad. */
 export const MODALITY_HINT_COOKIE = "modalidad-sugerida";
@@ -24,7 +30,9 @@ export function middleware(request: NextRequest) {
   const region = request.headers.get("x-vercel-ip-country-region");
   if (!region) return response;
 
-  const esLocal = region.toUpperCase() === ANZOATEGUI;
+  const pais = (request.headers.get("x-vercel-ip-country") ?? "").toUpperCase();
+  const esLocal =
+    pais === PAIS && ANZOATEGUI.includes(region.toUpperCase());
 
   response.cookies.set(MODALITY_HINT_COOKIE, esLocal ? "presencial" : "online", {
     path: "/",
