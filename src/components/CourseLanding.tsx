@@ -57,6 +57,12 @@ export default function CourseLanding({ course }: CourseLandingProps) {
     [course.modality, course.modalityLabel]
   );
 
+  // `undefined` = el curso no lleva control de cupos; 0 = agotado.
+  const seatsLeft = course.seatsLeft;
+  const controlaCupos = typeof seatsLeft === "number";
+  const presencialAgotado = seatsLeft === 0;
+  const quedanPocos = controlaCupos && seatsLeft > 0 && seatsLeft <= 5;
+
   const [step, setStep] = useState<PaymentStep>("form");
   const [modality, setModality] = useState<PurchaseModality>(
     modalityFlags.defaultPurchase
@@ -85,6 +91,13 @@ export default function CourseLanding({ course }: CourseLandingProps) {
       setModality(modalityFlags.defaultPurchase);
     }
   }, [modalityFlags]);
+
+  // Sin cupos presenciales, el curso mixto se vende solo online.
+  useEffect(() => {
+    if (presencialAgotado && !modalityFlags.esSoloPresencial) {
+      setModality("online");
+    }
+  }, [presencialAgotado, modalityFlags.esSoloPresencial]);
 
   const referenceValid = useMemo(
     () => /^\d{4,}$/.test(reference.replace(/\s/g, "")),
@@ -495,24 +508,43 @@ export default function CourseLanding({ course }: CourseLandingProps) {
                               type="button"
                               role="tab"
                               aria-selected={modality === "presencial"}
+                              disabled={presencialAgotado}
                               onClick={() => setModality("presencial")}
                               className={`rounded-lg px-3 py-2.5 text-sm font-semibold transition-all duration-200 ${
-                                modality === "presencial"
-                                  ? "bg-brand-blue text-white shadow-sm"
-                                  : "bg-transparent text-slate-600 hover:bg-white/70"
+                                presencialAgotado
+                                  ? "bg-transparent text-slate-400 cursor-not-allowed line-through"
+                                  : modality === "presencial"
+                                    ? "bg-brand-blue text-white shadow-sm"
+                                    : "bg-transparent text-slate-600 hover:bg-white/70"
                               }`}
                             >
                               🏢 Presencial
                             </button>
                           </div>
+                          <SeatsNotice
+                            seatsLeft={seatsLeft}
+                            agotado={presencialAgotado}
+                            quedanPocos={quedanPocos}
+                            hayOnline
+                          />
                         </>
                       ) : (
-                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">
-                          Modalidad{" "}
-                          {modalityFlags.esSoloOnline
-                            ? "Online"
-                            : "Presencial"}
-                        </p>
+                        <>
+                          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">
+                            Modalidad{" "}
+                            {modalityFlags.esSoloOnline
+                              ? "Online"
+                              : "Presencial"}
+                          </p>
+                          {modalityFlags.esSoloPresencial && (
+                            <SeatsNotice
+                              seatsLeft={seatsLeft}
+                              agotado={presencialAgotado}
+                              quedanPocos={quedanPocos}
+                              hayOnline={false}
+                            />
+                          )}
+                        </>
                       )}
 
                       <div
@@ -927,6 +959,53 @@ function InstructorBio({ bio }: { bio: string }) {
         </button>
       )}
     </div>
+  );
+}
+
+/**
+ * Cupos presenciales restantes. No se renderiza si el curso no lleva control
+ * de cupos (`seatsLeft` undefined), que es distinto de estar agotado (0).
+ */
+function SeatsNotice({
+  seatsLeft,
+  agotado,
+  quedanPocos,
+  hayOnline,
+}: {
+  seatsLeft?: number;
+  agotado: boolean;
+  quedanPocos: boolean;
+  hayOnline: boolean;
+}) {
+  if (typeof seatsLeft !== "number") return null;
+
+  if (agotado) {
+    return (
+      <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs leading-snug text-amber-900">
+        <span className="font-bold">Cupos presenciales agotados.</span>{" "}
+        {hayOnline
+          ? "Aún puedes inscribirte en la modalidad online, en vivo por Zoom."
+          : "Escríbenos por WhatsApp para avisarte de la próxima fecha."}
+      </p>
+    );
+  }
+
+  return (
+    <p
+      className={`mt-3 rounded-xl border px-3 py-2.5 text-xs leading-snug ${
+        quedanPocos
+          ? "border-amber-200 bg-amber-50 text-amber-900"
+          : "border-slate-200 bg-slate-50 text-slate-600"
+      }`}
+    >
+      <span className="font-bold">
+        {seatsLeft === 1
+          ? "Queda 1 cupo presencial"
+          : `Quedan ${seatsLeft} cupos presenciales`}
+      </span>
+      {quedanPocos ? " — los puestos del salón son limitados." : "."}{" "}
+      La modalidad online no tiene límite.
+    </p>
   );
 }
 

@@ -34,6 +34,8 @@ export interface SanityCourse {
   /** Precio modalidad online / Zoom */
   priceOnline?: number;
   currency?: string;
+  /** Cupos presenciales disponibles. Ausente = sin control de cupos. */
+  seatsPresencial?: number;
   featured?: boolean;
   certifiedBy?: string;
   coverImage?: SanityImage;

@@ -101,6 +101,16 @@ export const course = defineType({
       validation: (rule) => rule.required(),
     }),
     defineField({
+      name: "seatsPresencial",
+      title: "Cupos presenciales",
+      type: "number",
+      initialValue: 15,
+      description:
+        "Cupos que quedan libres. Es el número exacto que ve el visitante en la página. Al aprobar una inscripción presencial desde la web se descuenta solo; si vendes un cupo por fuera (oficina, WhatsApp), bájalo tú aquí. Déjalo vacío para no mostrar el contador.",
+      validation: (rule) => rule.min(0).integer(),
+      hidden: ({ document }) => document?.modality === "zoom",
+    }),
+    defineField({
       name: "priceOnline",
       title: "Precio online",
       type: "number",

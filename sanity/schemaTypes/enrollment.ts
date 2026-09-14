@@ -50,6 +50,15 @@ export const enrollment = defineType({
       validation: (rule) => rule.required(),
     }),
     defineField({
+      name: "seatDeducted",
+      title: "Cupo ya descontado",
+      type: "boolean",
+      description:
+        "Control interno: evita restar dos veces el mismo cupo si la aprobación se procesa por más de una vía.",
+      readOnly: true,
+      hidden: true,
+    }),
+    defineField({
       name: "course",
       title: "Curso",
       type: "reference",

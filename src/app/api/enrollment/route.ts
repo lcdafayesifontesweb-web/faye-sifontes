@@ -167,6 +167,27 @@ export async function POST(request: Request) {
     );
   }
 
+  // El boton deshabilitado en la pagina se puede saltar, asi que el limite de
+  // cupos se comprueba tambien aqui, con datos frescos (writeClient no usa CDN).
+  if (paymentModality === "presencial") {
+    try {
+      const cupos = await writeClient.fetch<number | null>(
+        `*[_type == "course" && _id == $id][0].seatsPresencial`,
+        { id: courseId }
+      );
+
+      if (typeof cupos === "number" && cupos <= 0) {
+        return badRequest(
+          "Ya no quedan cupos presenciales para este curso. Puedes inscribirte en la modalidad online."
+        );
+      }
+    } catch (err) {
+      // Si la consulta falla no se bloquea la inscripcion: perder una venta
+      // por un fallo de lectura es peor que aceptar un cupo de mas.
+      console.error("[api/enrollment] no se pudo verificar cupos:", err);
+    }
+  }
+
   try {
     const buffer = Buffer.from(await proof.arrayBuffer());
     if (!hasImageSignature(buffer)) {

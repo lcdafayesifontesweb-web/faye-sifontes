@@ -51,6 +51,7 @@ export const INSTRUCTORS_QUERY = `*[_type == "instructor"] | order(name asc) {
 
 export const COURSE_BY_SLUG_QUERY = `*[_type == "course" && slug.current == $slug][0] {
   _id,
+  seatsPresencial,
   title,
   "slug": slug.current,
   category,
@@ -180,6 +181,11 @@ export interface CoursePageData {
   featured: boolean;
   imageGradient: string;
   coverImageUrl?: string;
+  /**
+   * Cupos presenciales que quedan. `undefined` cuando el curso no lleva
+   * control de cupos, que no es lo mismo que 0 (agotado).
+   */
+  seatsLeft?: number;
   gallery: GalleryImage[];
   instructors: CoursePageInstructor[];
   certifiedBy?: string;
@@ -286,6 +292,15 @@ function mapSanityCoursePage(course: SanityCourse): CoursePageData {
     mapSanityInstructor(entry, index)
   );
 
+  // El campo de Sanity ES el numero que se muestra: lo que la administradora
+  // ve en el panel es lo que ve el visitante. Las aprobaciones web lo
+  // descuentan solas al confirmar el pago.
+  const seatsLeft =
+    typeof course.seatsPresencial === "number" &&
+    Number.isFinite(course.seatsPresencial)
+      ? Math.max(0, course.seatsPresencial)
+      : undefined;
+
   return {
     id: course._id,
     slug: course.slug,
@@ -307,6 +322,7 @@ function mapSanityCoursePage(course: SanityCourse): CoursePageData {
     coverImageUrl: course.coverImage
       ? urlFor(course.coverImage).width(1200).height(600).url()
       : undefined,
+    seatsLeft,
     gallery: mapGalleryImages(course.gallery, course.title),
     instructors: instructors.map((instructor) => ({
       id: instructor.id,

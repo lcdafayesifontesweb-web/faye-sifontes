@@ -8,6 +8,7 @@ import {
   type SendEmailResult,
 } from "@/lib/enrollmentEmails";
 import { resolveInstructorNames } from "@/lib/instructors";
+import { deductPresencialSeat } from "@/lib/seats";
 
 import {
   checkRateLimit,
@@ -163,6 +164,11 @@ export async function POST(request: Request) {
       { error: "Falta nombre o correo del alumno" },
       { status: 400 }
     );
+  }
+
+  // Aprobar confirma el pago: es el momento de ocupar el cupo presencial.
+  if (status === "approved") {
+    await deductPresencialSeat({ client: writeClient, enrollmentId: doc._id });
   }
 
   const siteOrigin = resolveSiteOrigin();

@@ -7,6 +7,7 @@ import {
   type CourseEmailInfo,
 } from "@/lib/enrollmentEmails";
 import { resolveInstructorNames } from "@/lib/instructors";
+import { deductPresencialSeat } from "@/lib/seats";
 
 export const runtime = "nodejs";
 
@@ -87,6 +88,20 @@ export async function POST(request: Request) {
       { error: "Missing student email or name" },
       { status: 400 }
     );
+  }
+
+  // Mismo descuento que hace el boton del Studio. `seatDeducted` garantiza
+  // que si ambas vias procesan la misma aprobacion, el cupo se resta una vez.
+  if (status === "approved") {
+    try {
+      await deductPresencialSeat({
+        client: getWriteClient(),
+        enrollmentId: doc._id,
+      });
+    } catch (err) {
+      // No bloquear el correo al alumno por un fallo al descontar el cupo.
+      console.error("[webhook] no se pudo descontar el cupo:", err);
+    }
   }
 
   const siteOrigin = resolveSiteOrigin();
