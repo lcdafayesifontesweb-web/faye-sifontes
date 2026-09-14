@@ -99,6 +99,28 @@ export default function CourseLanding({ course }: CourseLandingProps) {
     }
   }, [presencialAgotado, modalityFlags.esSoloPresencial]);
 
+  // Preselección según la región del visitante (la deja el middleware en una
+  // cookie). Se aplica una sola vez y solo al entrar: si después elige otra
+  // modalidad, mandan sus clics.
+  //
+  // No se puede resolver en el primer render: la página es estática y el HTML
+  // es el mismo para todos, así que leer la cookie al pintar provocaría un
+  // desajuste de hidratación. Por eso se ajusta justo después de montar.
+  const sugerenciaAplicada = useRef(false);
+  useEffect(() => {
+    if (sugerenciaAplicada.current) return;
+    sugerenciaAplicada.current = true;
+
+    if (!modalityFlags.esMixto || presencialAgotado) return;
+
+    const sugerida = document.cookie
+      .split("; ")
+      .find((c) => c.startsWith("modalidad-sugerida="))
+      ?.split("=")[1];
+
+    if (sugerida === "presencial") setModality("presencial");
+  }, [modalityFlags.esMixto, presencialAgotado]);
+
   const referenceValid = useMemo(
     () => /^\d{4,}$/.test(reference.replace(/\s/g, "")),
     [reference]
