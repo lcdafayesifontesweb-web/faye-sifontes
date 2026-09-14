@@ -152,11 +152,26 @@ function detailRow(label: string, value: string, alt = false): string {
   </tr>`;
 }
 
+/**
+ * Filas de la tabla con el rayado alterno calculado solo, omitiendo las
+ * vacias: la empresa es opcional y no debe dejar una fila en blanco ni
+ * descuadrar los colores de las siguientes.
+ */
+function stripedRows(rows: [string, string | undefined][]): string {
+  return rows
+    .filter(([, value]) => Boolean(value?.trim()))
+    .map(([label, value], index) => detailRow(label, value as string, index % 2 === 0))
+    .join("");
+}
+
 export function buildAdminPendingHtml(params: {
   studentName: string;
   idCard: string;
   phone: string;
   email: string;
+  profession?: string;
+  company?: string;
+  city?: string;
   referenceNumber: string;
   monto: string;
   modalityLabel?: string;
@@ -168,6 +183,9 @@ export function buildAdminPendingHtml(params: {
     idCard,
     phone,
     email,
+    profession,
+    company,
+    city,
     referenceNumber,
     monto,
     modalityLabel,
@@ -184,13 +202,18 @@ export function buildAdminPendingHtml(params: {
         Se registró una inscripción pendiente de verificación en el banco.
       </p>
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;">
-        ${detailRow("Nombre del Alumno", studentName, true)}
-        ${detailRow("Cédula", idCard)}
-        ${detailRow("Teléfono", phone, true)}
-        ${detailRow("Correo", email)}
-        ${modalityLabel ? detailRow("Modalidad", modalityLabel, true) : ""}
-        ${detailRow("Número de Referencia", referenceNumber, !modalityLabel)}
-        ${detailRow("Monto pagado", monto, Boolean(modalityLabel))}
+        ${stripedRows([
+          ["Nombre del Alumno", studentName],
+          ["Cédula", idCard],
+          ["Teléfono", phone],
+          ["Correo", email],
+          ["Profesión u ocupación", profession],
+          ["Empresa", company],
+          ["Ciudad", city],
+          ["Modalidad", modalityLabel],
+          ["Número de Referencia", referenceNumber],
+          ["Monto pagado", monto],
+        ])}
       </table>
       <table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px auto 0;">
         <tr>
@@ -394,6 +417,9 @@ export async function notifyAdminsNewEnrollment(params: {
   idCard: string;
   phone: string;
   email: string;
+  profession?: string;
+  company?: string;
+  city?: string;
   referenceNumber: string;
   monto: string;
   modalityLabel?: string;
@@ -419,6 +445,9 @@ export async function notifyAdminsNewEnrollment(params: {
       `Cédula: ${params.idCard}`,
       `Teléfono: ${params.phone}`,
       `Correo: ${params.email}`,
+      ...(params.profession ? [`Profesión u ocupación: ${params.profession}`] : []),
+      ...(params.company ? [`Empresa: ${params.company}`] : []),
+      ...(params.city ? [`Ciudad: ${params.city}`] : []),
       ...(params.modalityLabel ? [`Modalidad: ${params.modalityLabel}`] : []),
       `Referencia: ${params.referenceNumber}`,
       `Monto pagado: ${params.monto}`,

@@ -30,6 +30,26 @@ export const enrollment = defineType({
       validation: (rule) => rule.required().email(),
     }),
     defineField({
+      name: "profession",
+      title: "Profesión u ocupación",
+      type: "string",
+      description: 'Profesión del inscrito, o "Estudiante".',
+      validation: (rule) => rule.required(),
+    }),
+    defineField({
+      name: "company",
+      title: "Empresa",
+      type: "string",
+      description:
+        "Opcional: los estudiantes e independientes no tienen empresa.",
+    }),
+    defineField({
+      name: "city",
+      title: "Ciudad",
+      type: "string",
+      validation: (rule) => rule.required(),
+    }),
+    defineField({
       name: "course",
       title: "Curso",
       type: "reference",

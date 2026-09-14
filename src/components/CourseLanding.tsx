@@ -66,6 +66,9 @@ export default function CourseLanding({ course }: CourseLandingProps) {
     cedula: "",
     telefono: "",
     correo: "",
+    profesion: "",
+    empresa: "",
+    ciudad: "",
   });
   const [reference, setReference] = useState("");
   const [proofFile, setProofFile] = useState<File | null>(null);
@@ -185,6 +188,9 @@ export default function CourseLanding({ course }: CourseLandingProps) {
       body.append("idCard", formData.cedula.trim());
       body.append("phone", formData.telefono.trim());
       body.append("email", formData.correo.trim());
+      body.append("profession", formData.profesion.trim());
+      body.append("company", formData.empresa.trim());
+      body.append("city", formData.ciudad.trim());
       body.append("courseId", course.id);
       body.append("paymentModality", modality);
       body.append("amountUsd", String(selectedUsd));
@@ -581,6 +587,35 @@ export default function CourseLanding({ course }: CourseLandingProps) {
                         type="email"
                         value={formData.correo}
                         onChange={(v) => setFormData({ ...formData, correo: v })}
+                        required
+                      />
+                      <FormField
+                        label="Profesión u ocupación"
+                        id="profesion"
+                        value={formData.profesion}
+                        onChange={(v) =>
+                          setFormData({ ...formData, profesion: v })
+                        }
+                        placeholder="Contador, Abogado, Estudiante…"
+                        required
+                      />
+                      <FormField
+                        label="Empresa (opcional)"
+                        id="empresa"
+                        value={formData.empresa}
+                        onChange={(v) =>
+                          setFormData({ ...formData, empresa: v })
+                        }
+                        placeholder="Si aplica"
+                      />
+                      <FormField
+                        label="Ciudad"
+                        id="ciudad"
+                        value={formData.ciudad}
+                        onChange={(v) =>
+                          setFormData({ ...formData, ciudad: v })
+                        }
+                        placeholder="Puerto La Cruz"
                         required
                       />
                       <button

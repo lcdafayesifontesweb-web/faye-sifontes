@@ -56,6 +56,9 @@ type EnrollmentCreateDoc = {
   idCard: string;
   phone: string;
   email: string;
+  profession: string;
+  company?: string;
+  city: string;
   course: { _type: "reference"; _ref: string };
   paymentModality: "online" | "presencial";
   amountUsd: number;
@@ -111,6 +114,9 @@ export async function POST(request: Request) {
   const idCard = String(form.get("idCard") ?? "").trim();
   const phone = String(form.get("phone") ?? "").trim();
   const email = String(form.get("email") ?? "").trim();
+  const profession = String(form.get("profession") ?? "").trim();
+  const company = String(form.get("company") ?? "").trim();
+  const city = String(form.get("city") ?? "").trim();
   const courseId = String(form.get("courseId") ?? "").trim();
   const referenceNumber = String(form.get("referenceNumber") ?? "").trim();
   const montoRaw = String(form.get("monto") ?? "").trim();
@@ -128,6 +134,9 @@ export async function POST(request: Request) {
 
   if (!studentName || !idCard || !phone || !email) {
     return badRequest("Completa todos los datos del estudiante.");
+  }
+  if (!profession || !city) {
+    return badRequest("Indica tu profesión u ocupación y tu ciudad.");
   }
   if (!EMAIL_PATTERN.test(email)) {
     return badRequest("Ingresa un correo electrónico válido.");
@@ -178,6 +187,9 @@ export async function POST(request: Request) {
       idCard,
       phone,
       email: email.toLowerCase(),
+      profession,
+      ...(company ? { company } : {}),
+      city,
       course: {
         _type: "reference",
         _ref: courseId,
@@ -219,6 +231,9 @@ export async function POST(request: Request) {
         idCard,
         phone,
         email: email.toLowerCase(),
+        profession,
+        company,
+        city,
         referenceNumber: referenceNumber.replace(/\s/g, ""),
         monto,
         modalityLabel:
