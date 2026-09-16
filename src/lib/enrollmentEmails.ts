@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import { BRAND } from "@/data/coursesData";
+import { formatFechaAbono, type Abono } from "@/lib/abonos";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -442,6 +443,133 @@ export function buildStudentRejectedHtml(params: {
         Correo: <strong>${escapeHtml(BRAND.email)}</strong>
       </p>
     `,
+  });
+}
+
+export type AbonoEmailInfo = {
+  /** Abonos que se le notifican en este correo. */
+  abonos: Abono[];
+  totalAbonado: number;
+  saldoRestante: number;
+  saldado: boolean;
+  excedente: number;
+  balanceDueDate?: string;
+  courseTitle?: string;
+};
+
+export function buildAbonoReceivedHtml(params: {
+  studentName: string;
+  logoUrl: string;
+  info: AbonoEmailInfo;
+}): string {
+  const { studentName, logoUrl, info } = params;
+  const firstName = studentName.split(/\s+/)[0] || studentName;
+
+  const filas = info.abonos
+    .map((a) => {
+      const fecha = formatFechaAbono(a.fecha);
+      const etiqueta = ["Abono recibido", fecha].filter(Boolean).join(" · ");
+      const valor = a.referencia
+        ? `$${a.montoUsd} USD (Ref. ${a.referencia})`
+        : `$${a.montoUsd} USD`;
+      return [etiqueta, valor] as [string, string];
+    })
+    .map(([l, v], i) => detailRow(l, v, i % 2 === 0))
+    .join("");
+
+  const cierre = info.saldado
+    ? `<div style="margin:0 0 20px;border:1px solid #86efac;background:#f0fdf4;border-radius:12px;padding:16px 18px;">
+         <p style="margin:0;font-size:15px;line-height:1.55;color:#14532d;">
+           <strong>¡Tu pago quedó completo!</strong> No tienes saldo pendiente.
+           ${
+             info.excedente > 0
+               ? `Registramos un excedente de $${info.excedente} USD; te contactaremos para resolverlo.`
+               : ""
+           }
+         </p>
+       </div>`
+    : saldoPendienteHtml({
+        balanceDueUsd: info.saldoRestante,
+        balanceDueDate: info.balanceDueDate,
+      });
+
+  return emailShell({
+    logoUrl,
+    eyebrow: BRAND.company,
+    title: info.saldado ? "Pago completado" : "Recibimos tu abono",
+    bodyHtml: `
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#475569;">
+        Hola <strong>${escapeHtml(firstName)}</strong>,
+      </p>
+      <p style="margin:0 0 20px;font-size:15px;line-height:1.6;color:#475569;">
+        Confirmamos que recibimos tu pago${
+          info.courseTitle
+            ? ` para el curso <strong>${escapeHtml(info.courseTitle)}</strong>`
+            : ""
+        }. Aquí está el detalle:
+      </p>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;margin-bottom:20px;">
+        ${filas}
+        ${detailRow("Total abonado", `$${info.totalAbonado} USD`, info.abonos.length % 2 === 0)}
+        ${detailRow(
+          info.saldado ? "Saldo" : "Saldo pendiente",
+          info.saldado ? "$0 USD" : `$${info.saldoRestante} USD`,
+          info.abonos.length % 2 !== 0
+        )}
+      </table>
+      ${cierre}
+    `,
+  });
+}
+
+export async function notifyStudentAbono(params: {
+  studentName: string;
+  email: string;
+  info: AbonoEmailInfo;
+  siteOrigin: string;
+}): Promise<SendEmailResult> {
+  const { info } = params;
+
+  return sendEmail({
+    to: params.email,
+    subject: info.saldado
+      ? `Pago completado — ${BRAND.company}`
+      : `Recibimos tu abono — ${BRAND.company}`,
+    html: buildAbonoReceivedHtml({
+      studentName: params.studentName,
+      logoUrl: getLogoUrl(params.siteOrigin),
+      info,
+    }),
+    text: [
+      `Hola ${params.studentName.split(/\s+/)[0] || params.studentName},`,
+      "",
+      "Confirmamos que recibimos tu pago" +
+        (info.courseTitle ? ` para el curso "${info.courseTitle}"` : "") +
+        ".",
+      "",
+      ...info.abonos.map((a) => {
+        const fecha = formatFechaAbono(a.fecha);
+        const ref = a.referencia ? ` (Ref. ${a.referencia})` : "";
+        return `Abono recibido${fecha ? ` el ${fecha}` : ""}: $${a.montoUsd} USD${ref}`;
+      }),
+      `Total abonado: $${info.totalAbonado} USD`,
+      info.saldado
+        ? "Saldo: $0 USD — ¡tu pago quedó completo!"
+        : `Saldo pendiente: $${info.saldoRestante} USD`,
+      ...(info.saldado
+        ? info.excedente > 0
+          ? [
+              "",
+              `Registramos un excedente de $${info.excedente} USD; te contactaremos para resolverlo.`,
+            ]
+          : []
+        : saldoPendienteTexto({
+            balanceDueUsd: info.saldoRestante,
+            balanceDueDate: info.balanceDueDate,
+          })),
+      "",
+      BRAND.company,
+    ].join("\n"),
   });
 }
 

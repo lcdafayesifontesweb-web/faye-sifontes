@@ -1,4 +1,4 @@
-import { defineField, defineType } from "sanity";
+import { defineArrayMember, defineField, defineType } from "sanity";
 
 export const enrollment = defineType({
   name: "enrollment",
@@ -109,6 +109,74 @@ export const enrollment = defineType({
       hidden: ({ document }) => document?.paymentType !== "inicial",
     }),
     defineField({
+      name: "abonos",
+      title: "Abonos recibidos",
+      type: "array",
+      description:
+        "Pagos parciales del saldo. Usa + para agregar cada abono que vaya llegando; no hay cuotas fijas. Tras agregarlo y publicar, usa el botón «Enviar recibo de abono» para avisarle al alumno cuánto le queda.",
+      hidden: ({ document }) => document?.paymentType !== "inicial",
+      of: [
+        defineArrayMember({
+          type: "object",
+          name: "abono",
+          title: "Abono",
+          fields: [
+            defineField({
+              name: "montoUsd",
+              title: "Monto (USD)",
+              type: "number",
+              validation: (rule) => rule.required().positive(),
+            }),
+            defineField({
+              name: "fecha",
+              title: "Fecha del pago",
+              type: "date",
+              options: { dateFormat: "DD/MM/YYYY" },
+            }),
+            defineField({
+              name: "referencia",
+              title: "Referencia",
+              type: "string",
+            }),
+            defineField({
+              name: "nota",
+              title: "Nota interna",
+              type: "string",
+              description: "No se le muestra al alumno.",
+            }),
+            defineField({
+              name: "notificado",
+              title: "Recibo enviado",
+              type: "boolean",
+              description:
+                "Lo marca el sistema al enviar el recibo. No hace falta tocarlo.",
+              readOnly: true,
+            }),
+          ],
+          preview: {
+            select: {
+              montoUsd: "montoUsd",
+              fecha: "fecha",
+              referencia: "referencia",
+              notificado: "notificado",
+            },
+            prepare({ montoUsd, fecha, referencia, notificado }) {
+              return {
+                title: montoUsd != null ? `$${montoUsd} USD` : "Sin monto",
+                subtitle: [
+                  fecha,
+                  referencia ? `Ref. ${referencia}` : null,
+                  notificado ? "recibo enviado" : "recibo pendiente",
+                ]
+                  .filter(Boolean)
+                  .join(" · "),
+              };
+            },
+          },
+        }),
+      ],
+    }),
+    defineField({
       name: "termsAccepted",
       title: "Aceptó términos y condiciones",
       type: "boolean",
@@ -179,8 +247,20 @@ export const enrollment = defineType({
       courseTitle: "course.title",
       media: "paymentProof",
       modality: "paymentModality",
+      paymentType: "paymentType",
+      balanceDueUsd: "balanceDueUsd",
+      abonos: "abonos",
     },
-    prepare({ title, status, courseTitle, media, modality }) {
+    prepare({
+      title,
+      status,
+      courseTitle,
+      media,
+      modality,
+      paymentType,
+      balanceDueUsd,
+      abonos,
+    }) {
       const statusLabel =
         status === "approved"
           ? "Pago Confirmado"
@@ -193,9 +273,27 @@ export const enrollment = defineType({
           : modality === "presencial"
             ? "Presencial"
             : null;
+      // El saldo se calcula aquí para verlo de un vistazo en el listado, sin
+      // tener que abrir cada inscripción y sumar los abonos a mano.
+      let saldoLabel: string | null = null;
+      if (paymentType === "inicial" && typeof balanceDueUsd === "number") {
+        const abonado = (abonos ?? [])
+          .filter(
+            (a: { montoUsd?: number }) =>
+              typeof a?.montoUsd === "number" && a.montoUsd > 0
+          )
+          .reduce(
+            (suma: number, a: { montoUsd?: number }) =>
+              suma + (a.montoUsd as number),
+            0
+          );
+        const restante = Math.round((balanceDueUsd - abonado) * 100) / 100;
+        saldoLabel = restante > 0 ? `debe $${restante}` : "saldado";
+      }
+
       return {
         title: title || "Sin nombre",
-        subtitle: [statusLabel, modalityLabel, courseTitle]
+        subtitle: [statusLabel, modalityLabel, saldoLabel, courseTitle]
           .filter(Boolean)
           .join(" · "),
         media,
