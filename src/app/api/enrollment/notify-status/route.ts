@@ -30,6 +30,8 @@ type EnrollmentDoc = {
   statusEmailSent?: string | null;
   /** Modalidad que el alumno realmente pago. */
   paymentModality?: "online" | "presencial";
+  balanceDueUsd?: number | null;
+  balanceDueDate?: string | null;
   course?: {
     title?: string;
     description?: string;
@@ -97,6 +99,8 @@ export async function POST(request: Request) {
       status,
       statusEmailSent,
       paymentModality,
+      balanceDueUsd,
+      balanceDueDate,
       course->{
         title,
         description,
@@ -182,6 +186,8 @@ export async function POST(request: Request) {
       schedule: doc.course?.schedule,
       modality: doc.course?.modality,
       purchasedModality: doc.paymentModality,
+      balanceDueUsd: doc.balanceDueUsd ?? undefined,
+      balanceDueDate: doc.balanceDueDate ?? undefined,
       instructorNames: resolveInstructorNames(
         doc.course?.instructorNames,
         doc.course?.legacyInstructorName

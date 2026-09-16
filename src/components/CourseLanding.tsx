@@ -30,6 +30,15 @@ import {
   classifyCourseModality,
   type PurchaseModality,
 } from "@/lib/modality";
+import {
+  fechaTopePago,
+  formatFechaTope,
+  montoInicial,
+  montoSaldo,
+  permiteInicial,
+  PORCENTAJE_INICIAL,
+  type PaymentType,
+} from "@/lib/pagos";
 import CertificationBadge from "./CertificationBadge";
 import CourseCountdown from "./CourseCountdown";
 import CourseGallery from "./CourseGallery";
@@ -76,6 +85,8 @@ export default function CourseLanding({ course }: CourseLandingProps) {
     empresa: "",
     ciudad: "",
   });
+  const [paymentType, setPaymentType] = useState<PaymentType>("total");
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [reference, setReference] = useState("");
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [proofError, setProofError] = useState<string | null>(null);
@@ -148,6 +159,36 @@ export default function CourseLanding({ course }: CourseLandingProps) {
 
   const modalityLabel =
     modality === "online" ? "Online" : "Presencial";
+
+  // La reserva necesita fecha de inicio para calcular el tope, y ese tope debe
+  // seguir vigente.
+  const admiteInicial = useMemo(
+    () => permiteInicial(course.startsAt),
+    [course.startsAt]
+  );
+
+  const fechaTope = useMemo(() => {
+    const tope = fechaTopePago(course.startsAt);
+    return tope ? formatFechaTope(tope) : null;
+  }, [course.startsAt]);
+
+  // Si el curso deja de admitir reserva, vuelve a pago total.
+  useEffect(() => {
+    if (!admiteInicial) setPaymentType("total");
+  }, [admiteInicial]);
+
+  const inicialUsd = useMemo(
+    () => montoInicial(selectedUsd),
+    [selectedUsd]
+  );
+  const saldoUsd = useMemo(() => montoSaldo(selectedUsd), [selectedUsd]);
+
+  /** Lo que el alumno paga ahora. */
+  const aPagarUsd = paymentType === "inicial" ? inicialUsd : selectedUsd;
+  const aPagarBs = useMemo(() => {
+    if (!tasaData) return null;
+    return usdToBs(aPagarUsd, tasaData.tasa);
+  }, [tasaData, aPagarUsd]);
 
   useEffect(() => {
     let cancelled = false;
@@ -228,16 +269,22 @@ export default function CourseLanding({ course }: CourseLandingProps) {
       body.append("city", formData.ciudad.trim());
       body.append("courseId", course.id);
       body.append("paymentModality", modality);
-      body.append("amountUsd", String(selectedUsd));
-      if (selectedBs != null) {
-        body.append("amountBs", String(selectedBs));
+      body.append("paymentType", paymentType);
+      body.append("termsAccepted", String(termsAccepted));
+      body.append("amountUsd", String(aPagarUsd));
+      if (aPagarBs != null) {
+        body.append("amountBs", String(aPagarBs));
       }
       body.append("referenceNumber", reference.replace(/\s/g, ""));
+      const etiquetaPago =
+        paymentType === "inicial"
+          ? `${modalityLabel} · Inicial ${Math.round(PORCENTAJE_INICIAL * 100)}%`
+          : `${modalityLabel} · Pago completo`;
       body.append(
         "monto",
-        selectedBs != null && tasaData
-          ? `${modalityLabel} $${selectedUsd} USD | Bs. ${formatBs(selectedBs)} · Tasa BCV ${formatBs(tasaData.tasa)} (${tasaData.ultimaActualizacion})`
-          : `${modalityLabel} $${selectedUsd} ${course.currency}`
+        aPagarBs != null && tasaData
+          ? `${etiquetaPago} $${aPagarUsd} USD | Bs. ${formatBs(aPagarBs)} · Tasa BCV ${formatBs(tasaData.tasa)} (${tasaData.ultimaActualizacion})`
+          : `${etiquetaPago} $${aPagarUsd} ${course.currency}`
       );
       body.append("paymentProof", proofFile);
 
@@ -606,6 +653,18 @@ export default function CourseLanding({ course }: CourseLandingProps) {
                           </p>
                         )}
                       </div>
+
+                      {admiteInicial && (
+                        <PaymentTypePicker
+                          paymentType={paymentType}
+                          onChange={setPaymentType}
+                          totalUsd={selectedUsd}
+                          inicialUsd={inicialUsd}
+                          saldoUsd={saldoUsd}
+                          tasa={tasaData?.tasa ?? null}
+                          fechaTope={fechaTope}
+                        />
+                      )}
                     </div>
                   )}
 
@@ -672,9 +731,40 @@ export default function CourseLanding({ course }: CourseLandingProps) {
                         placeholder="Puerto La Cruz"
                         required
                       />
+                      <label className="flex items-start gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={termsAccepted}
+                          onChange={(e) => setTermsAccepted(e.target.checked)}
+                          required
+                          className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-brand-blue focus:ring-brand-500"
+                        />
+                        <span className="text-xs leading-relaxed text-slate-600">
+                          He leído y acepto los{" "}
+                          <Link
+                            href="/terminos-y-condiciones"
+                            target="_blank"
+                            className="font-semibold text-brand-700 underline underline-offset-2 hover:text-brand-800"
+                          >
+                            términos y condiciones
+                          </Link>
+                          {paymentType === "inicial" && (
+                            <>
+                              , incluido el compromiso de pagar el saldo antes
+                              de la fecha tope.
+                            </>
+                          )}
+                        </span>
+                      </label>
+
                       <button
                         type="submit"
-                        className="w-full py-3.5 rounded-xl bg-brand-blue hover:bg-brand-600 text-white font-bold shadow-md transition-all cta-pulse"
+                        disabled={!termsAccepted}
+                        className={`w-full py-3.5 rounded-xl font-bold shadow-md transition-all ${
+                          termsAccepted
+                            ? "bg-brand-blue hover:bg-brand-600 text-white cta-pulse"
+                            : "bg-slate-200 text-slate-400 cursor-not-allowed"
+                        }`}
                       >
                         Continuar al pago →
                       </button>
@@ -716,20 +806,37 @@ export default function CourseLanding({ course }: CourseLandingProps) {
                             </dd>
                           </div>
                           <div className="flex justify-between gap-3 border-t border-slate-200 pt-2 mt-2">
-                            <dt className="text-slate-500 shrink-0">Monto</dt>
+                            <dt className="text-slate-500 shrink-0">
+                              {paymentType === "inicial"
+                                ? "Monto a transferir ahora"
+                                : "Monto"}
+                            </dt>
                             <dd className="font-bold text-brand-700 min-w-0 text-right text-sm leading-snug">
-                              ${selectedUsd} USD
-                              {selectedBs != null && (
+                              ${aPagarUsd} USD
+                              {aPagarBs != null && (
                                 <>
                                   <br />
                                   <span className="text-brand-800">
-                                    Bs. {formatBs(selectedBs)}
+                                    Bs. {formatBs(aPagarBs)}
                                   </span>
                                 </>
                               )}
                             </dd>
                           </div>
                         </dl>
+
+                        {paymentType === "inicial" && fechaTope && (
+                          <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-900">
+                            Estás reservando con el{" "}
+                            {Math.round(PORCENTAJE_INICIAL * 100)}%. El saldo de{" "}
+                            <span className="font-bold">${saldoUsd} USD</span>{" "}
+                            vence el{" "}
+                            <span className="font-bold">
+                              {fechaTope}
+                            </span>
+                            .
+                          </p>
+                        )}
                       </div>
 
                       <FormField
@@ -981,6 +1088,115 @@ function InstructorBio({ bio }: { bio: string }) {
         </button>
       )}
     </div>
+  );
+}
+
+/**
+ * Elección entre pagar el curso completo o reservar con el 20%.
+ *
+ * Solo se muestra en cursos con fecha de inicio: sin ella no hay forma de
+ * calcular la fecha tope del saldo.
+ */
+function PaymentTypePicker({
+  paymentType,
+  onChange,
+  totalUsd,
+  inicialUsd,
+  saldoUsd,
+  tasa,
+  fechaTope,
+}: {
+  paymentType: PaymentType;
+  onChange: (t: PaymentType) => void;
+  totalUsd: number;
+  inicialUsd: number;
+  saldoUsd: number;
+  tasa: number | null;
+  fechaTope: string | null;
+}) {
+  const bs = (usd: number) =>
+    tasa != null ? ` | Bs. ${formatBs(usdToBs(usd, tasa))}` : "";
+
+  return (
+    <div className="mt-4">
+      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">
+        ¿Cómo quieres pagar?
+      </p>
+      <div className="grid gap-2">
+        <PaymentOption
+          activo={paymentType === "total"}
+          onClick={() => onChange("total")}
+          titulo="Pago completo"
+          monto={`$${totalUsd} USD${bs(totalUsd)}`}
+          detalle="Tu cupo queda confirmado de una vez."
+        />
+        <PaymentOption
+          activo={paymentType === "inicial"}
+          onClick={() => onChange("inicial")}
+          titulo={`Reserva con ${Math.round(PORCENTAJE_INICIAL * 100)}%`}
+          monto={`$${inicialUsd} USD${bs(inicialUsd)}`}
+          detalle={`Quedas debiendo $${saldoUsd} USD.`}
+        />
+      </div>
+
+      {paymentType === "inicial" && fechaTope && (
+        <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs leading-relaxed text-amber-900">
+          <p>
+            <span className="font-bold">Importante:</span> debes pagar el saldo
+            de{" "}
+            <span className="font-bold">
+              ${saldoUsd} USD{bs(saldoUsd)}
+            </span>{" "}
+            a más tardar el{" "}
+            <span className="font-bold">{fechaTope}</span> (5 días
+            hábiles antes del inicio).
+          </p>
+          <p className="mt-1.5">
+            Si no lo pagas para esa fecha podremos disponer de tu cupo, y la
+            inicial no se reembolsa.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PaymentOption({
+  activo,
+  onClick,
+  titulo,
+  monto,
+  detalle,
+}: {
+  activo: boolean;
+  onClick: () => void;
+  titulo: string;
+  monto: string;
+  detalle: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={activo}
+      className={`w-full rounded-xl border px-4 py-3 text-left transition-all ${
+        activo
+          ? "border-brand-blue bg-brand-50 ring-1 ring-brand-blue"
+          : "border-slate-200 bg-white hover:border-brand-200 hover:bg-slate-50"
+      }`}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-sm font-bold text-slate-900">{titulo}</span>
+        <span
+          className={`h-4 w-4 shrink-0 rounded-full border-2 ${
+            activo ? "border-brand-blue bg-brand-blue" : "border-slate-300"
+          }`}
+          aria-hidden="true"
+        />
+      </div>
+      <p className="mt-1 text-sm font-extrabold text-brand-800">{monto}</p>
+      <p className="mt-0.5 text-xs text-slate-500">{detalle}</p>
+    </button>
   );
 }
 

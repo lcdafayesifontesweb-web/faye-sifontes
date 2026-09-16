@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getWriteClient, client as readClient } from "@/sanity/client";
+import { getWriteClient } from "@/sanity/client";
 import {
   getAdminEmails,
   notifyAdminsNewEnrollment,
@@ -7,6 +7,14 @@ import {
   resolveSiteOrigin,
 } from "@/lib/enrollmentEmails";
 
+import {
+  fechaTopePago,
+  formatFechaTope,
+  montoInicial,
+  montoSaldo,
+  permiteInicial,
+  type PaymentType,
+} from "@/lib/pagos";
 import {
   checkRateLimit,
   getClientIp,
@@ -61,6 +69,10 @@ type EnrollmentCreateDoc = {
   city: string;
   course: { _type: "reference"; _ref: string };
   paymentModality: "online" | "presencial";
+  paymentType: PaymentType;
+  balanceDueUsd?: number;
+  balanceDueDate?: string;
+  termsAccepted: boolean;
   amountUsd: number;
   amountBs?: number;
   monto: string;
@@ -130,6 +142,8 @@ export async function POST(request: Request) {
     amountBsRaw != null && String(amountBsRaw).trim() !== ""
       ? Number(amountBsRaw)
       : undefined;
+  const paymentTypeRaw = String(form.get("paymentType") ?? "total").trim();
+  const termsAccepted = String(form.get("termsAccepted") ?? "") === "true";
   const proof = form.get("paymentProof");
 
   if (!studentName || !idCard || !phone || !email) {
@@ -150,6 +164,9 @@ export async function POST(request: Request) {
   if (!Number.isFinite(amountUsd) || amountUsd < 0) {
     return badRequest("Monto USD inválido.");
   }
+  if (!termsAccepted) {
+    return badRequest("Debes aceptar los términos y condiciones.");
+  }
   if (!/^\d{4,}$/.test(referenceNumber.replace(/\s/g, ""))) {
     return badRequest("Ingresa un número de referencia válido (solo dígitos).");
   }
@@ -167,24 +184,73 @@ export async function POST(request: Request) {
     );
   }
 
-  // El boton deshabilitado en la pagina se puede saltar, asi que el limite de
-  // cupos se comprueba tambien aqui, con datos frescos (writeClient no usa CDN).
-  if (paymentModality === "presencial") {
-    try {
-      const cupos = await writeClient.fetch<number | null>(
-        `*[_type == "course" && _id == $id][0].seatsPresencial`,
-        { id: courseId }
-      );
+  // Una sola lectura del curso con datos frescos (writeClient no usa CDN) para
+  // todo lo que depende de el: cupos, precios y fecha de inicio.
+  type CursoInfo = {
+    title?: string;
+    startsAt?: string | null;
+    price?: number | null;
+    priceOnline?: number | null;
+    seatsPresencial?: number | null;
+  };
 
-      if (typeof cupos === "number" && cupos <= 0) {
-        return badRequest(
-          "Ya no quedan cupos presenciales para este curso. Puedes inscribirte en la modalidad online."
-        );
-      }
-    } catch (err) {
-      // Si la consulta falla no se bloquea la inscripcion: perder una venta
-      // por un fallo de lectura es peor que aceptar un cupo de mas.
-      console.error("[api/enrollment] no se pudo verificar cupos:", err);
+  let curso: CursoInfo | null = null;
+  try {
+    curso = await writeClient.fetch<CursoInfo | null>(
+      `*[_type == "course" && _id == $id][0]{
+        title, startsAt, price, priceOnline, seatsPresencial
+      }`,
+      { id: courseId }
+    );
+  } catch (err) {
+    console.error("[api/enrollment] no se pudo leer el curso:", err);
+  }
+
+  // El boton deshabilitado en la pagina se puede saltar, asi que el limite de
+  // cupos se comprueba tambien aqui.
+  if (
+    paymentModality === "presencial" &&
+    typeof curso?.seatsPresencial === "number" &&
+    curso.seatsPresencial <= 0
+  ) {
+    return badRequest(
+      "Ya no quedan cupos presenciales para este curso. Puedes inscribirte en la modalidad online."
+    );
+  }
+
+  // El tipo de pago y sus montos se resuelven aqui, no se aceptan del cliente:
+  // si no, cualquiera podria declarar "inicial" sobre un curso sin fecha, o
+  // inventarse el saldo.
+  //
+  // Si no se pudo leer el curso se cae a pago total: es el caso seguro, porque
+  // no deja una reserva registrada sin fecha tope que reclamar.
+  const admiteInicial = permiteInicial(curso?.startsAt);
+  const paymentType: PaymentType =
+    paymentTypeRaw === "inicial" && admiteInicial ? "inicial" : "total";
+
+  if (paymentTypeRaw === "inicial" && !admiteInicial) {
+    return badRequest(
+      "Este curso ya no admite reserva con inicial. Debes pagar el monto completo."
+    );
+  }
+
+  const precioCurso =
+    paymentModality === "presencial" ? curso?.price : curso?.priceOnline;
+
+  let balanceDueUsd: number | undefined;
+  let balanceDueDate: string | undefined;
+
+  if (paymentType === "inicial" && typeof precioCurso === "number") {
+    balanceDueUsd = montoSaldo(precioCurso);
+    const tope = fechaTopePago(curso?.startsAt);
+    if (tope) balanceDueDate = formatFechaTope(tope);
+
+    // El monto que llega del formulario debe coincidir con el 20% real.
+    const esperado = montoInicial(precioCurso);
+    if (Math.abs(amountUsd - esperado) > 0.01) {
+      return badRequest(
+        "El monto de la inicial no coincide con el precio del curso. Recarga la página e intenta de nuevo."
+      );
     }
   }
 
@@ -216,6 +282,10 @@ export async function POST(request: Request) {
         _ref: courseId,
       },
       paymentModality,
+      paymentType,
+      ...(balanceDueUsd != null ? { balanceDueUsd } : {}),
+      ...(balanceDueDate ? { balanceDueDate } : {}),
+      termsAccepted,
       amountUsd,
       ...(Number.isFinite(amountBs) ? { amountBs: amountBs as number } : {}),
       monto,
@@ -232,15 +302,7 @@ export async function POST(request: Request) {
 
     const doc = await writeClient.create(enrollmentDoc);
 
-    let courseTitle: string | undefined;
-    try {
-      courseTitle = await readClient.fetch(
-        `*[_type == "course" && _id == $id][0].title`,
-        { id: courseId }
-      );
-    } catch {
-      /* optional for email copy */
-    }
+    const courseTitle = curso?.title;
 
     const siteOrigin = resolveSiteOrigin();
 
@@ -255,6 +317,10 @@ export async function POST(request: Request) {
         profession,
         company,
         city,
+        paymentTypeLabel:
+          paymentType === "inicial" ? "Inicial 20% (reserva)" : "Pago completo",
+        balanceDueUsd,
+        balanceDueDate,
         referenceNumber: referenceNumber.replace(/\s/g, ""),
         monto,
         modalityLabel:
@@ -266,6 +332,8 @@ export async function POST(request: Request) {
         email: email.toLowerCase(),
         courseTitle,
         purchasedModality: paymentModality,
+        balanceDueUsd,
+        balanceDueDate,
         siteOrigin,
       }),
     ]);

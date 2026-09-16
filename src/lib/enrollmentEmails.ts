@@ -51,6 +51,9 @@ export type CourseEmailInfo = {
    */
   purchasedModality?: PurchasedModality;
   instructorNames?: string[];
+  /** Solo en reservas con inicial: lo que el alumno todavia debe. */
+  balanceDueUsd?: number;
+  balanceDueDate?: string;
 };
 
 export function purchasedModalityLabel(
@@ -164,6 +167,68 @@ function stripedRows(rows: [string, string | undefined][]): string {
     .join("");
 }
 
+/**
+ * Recordatorio del saldo con los datos de Pago Móvil.
+ *
+ * Solo se incluye en reservas con inicial: quien pagó completo no debe nada y
+ * mandarle los datos de pago lo confundiría.
+ */
+function saldoPendienteHtml(params: {
+  balanceDueUsd?: number;
+  balanceDueDate?: string;
+}): string {
+  const { balanceDueUsd, balanceDueDate } = params;
+  if (balanceDueUsd == null) return "";
+
+  const fecha = balanceDueDate
+    ? `<strong>${escapeHtml(balanceDueDate)}</strong>`
+    : "5 días hábiles antes del inicio del curso";
+
+  return `
+    <div style="margin:0 0 20px;border:1px solid #fcd34d;background:#fffbeb;border-radius:12px;padding:16px 18px;">
+      <p style="margin:0 0 10px;font-size:15px;line-height:1.55;color:#78350f;">
+        <strong>Te queda un saldo pendiente de $${balanceDueUsd} USD.</strong>
+        Debes pagarlo a más tardar el ${fecha}.
+      </p>
+      <p style="margin:0 0 12px;font-size:14px;line-height:1.55;color:#78350f;">
+        Si no se recibe el pago para esa fecha, podremos disponer de tu cupo y
+        la inicial no se reembolsa.
+      </p>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #fcd34d;border-radius:10px;overflow:hidden;background:#ffffff;">
+        ${detailRow("Banco", BRAND.pagoMovil.banco, true)}
+        ${detailRow("Teléfono", BRAND.pagoMovil.telefono)}
+        ${detailRow("Cédula / RIF", BRAND.pagoMovil.cedula, true)}
+        ${detailRow("Monto del saldo", `$${balanceDueUsd} USD`)}
+      </table>
+      <p style="margin:12px 0 0;font-size:13px;line-height:1.5;color:#92400e;">
+        Al pagar, envía el comprobante por WhatsApp al ${escapeHtml(BRAND.phone)}.
+      </p>
+    </div>`;
+}
+
+/** Misma información que `saldoPendienteHtml`, en texto plano. */
+function saldoPendienteTexto(params: {
+  balanceDueUsd?: number;
+  balanceDueDate?: string;
+}): string[] {
+  const { balanceDueUsd, balanceDueDate } = params;
+  if (balanceDueUsd == null) return [];
+
+  return [
+    "",
+    `SALDO PENDIENTE: $${balanceDueUsd} USD`,
+    `Fecha tope de pago: ${balanceDueDate ?? "5 días hábiles antes del inicio del curso"}`,
+    "Si no se recibe el pago para esa fecha, podremos disponer de tu cupo y la inicial no se reembolsa.",
+    "",
+    "Datos para el Pago Móvil:",
+    `  Banco: ${BRAND.pagoMovil.banco}`,
+    `  Teléfono: ${BRAND.pagoMovil.telefono}`,
+    `  Cédula / RIF: ${BRAND.pagoMovil.cedula}`,
+    `  Monto: $${balanceDueUsd} USD`,
+    `Al pagar, envía el comprobante por WhatsApp al ${BRAND.phone}.`,
+  ];
+}
+
 export function buildAdminPendingHtml(params: {
   studentName: string;
   idCard: string;
@@ -172,6 +237,9 @@ export function buildAdminPendingHtml(params: {
   profession?: string;
   company?: string;
   city?: string;
+  paymentTypeLabel?: string;
+  balanceDueUsd?: number;
+  balanceDueDate?: string;
   referenceNumber: string;
   monto: string;
   modalityLabel?: string;
@@ -186,6 +254,9 @@ export function buildAdminPendingHtml(params: {
     profession,
     company,
     city,
+    paymentTypeLabel,
+    balanceDueUsd,
+    balanceDueDate,
     referenceNumber,
     monto,
     modalityLabel,
@@ -211,6 +282,12 @@ export function buildAdminPendingHtml(params: {
           ["Empresa", company],
           ["Ciudad", city],
           ["Modalidad", modalityLabel],
+          ["Forma de pago", paymentTypeLabel],
+          [
+            "Saldo pendiente",
+            balanceDueUsd != null ? `$${balanceDueUsd} USD` : undefined,
+          ],
+          ["Fecha tope del saldo", balanceDueDate],
           ["Número de Referencia", referenceNumber],
           ["Monto pagado", monto],
         ])}
@@ -233,6 +310,8 @@ export function buildStudentReceivedHtml(params: {
   logoUrl: string;
   courseTitle?: string;
   purchasedModality?: PurchasedModality;
+  balanceDueUsd?: number;
+  balanceDueDate?: string;
 }): string {
   const firstName = params.studentName.split(/\s+/)[0] || params.studentName;
   const courseLine = params.courseTitle
@@ -259,6 +338,7 @@ export function buildStudentReceivedHtml(params: {
         cuando el pago quede confirmado o si necesitamos verificar algo.
       </p>
       ${modalityBlock}
+      ${saldoPendienteHtml(params)}
       <p style="margin:0;font-size:15px;line-height:1.6;color:#475569;">
         Si tienes dudas, escríbenos al WhatsApp
         <strong>${escapeHtml(BRAND.phone)}</strong>.
@@ -294,9 +374,16 @@ export function buildStudentApprovedHtml(params: {
         Hola <strong>${escapeHtml(firstName)}</strong>,
       </p>
       <p style="margin:0 0 20px;font-size:15px;line-height:1.6;color:#475569;">
-        ¡Gracias por inscribirte! Tu pago fue confirmado y tu cupo está reservado.
-        Aquí tienes los detalles de tu inscripción:
+        ${
+          course.balanceDueUsd != null
+            ? "¡Gracias por inscribirte! Recibimos tu inicial y tu cupo está reservado. Aquí tienes los detalles:"
+            : "¡Gracias por inscribirte! Tu pago fue confirmado y tu cupo está reservado. Aquí tienes los detalles de tu inscripción:"
+        }
       </p>
+      ${saldoPendienteHtml({
+        balanceDueUsd: course.balanceDueUsd,
+        balanceDueDate: course.balanceDueDate,
+      })}
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;margin-bottom:20px;">
         ${detailRow("Curso", course.title || "—", true)}
         ${detailRow("Fecha", course.date || "—")}
@@ -420,6 +507,9 @@ export async function notifyAdminsNewEnrollment(params: {
   profession?: string;
   company?: string;
   city?: string;
+  paymentTypeLabel?: string;
+  balanceDueUsd?: number;
+  balanceDueDate?: string;
   referenceNumber: string;
   monto: string;
   modalityLabel?: string;
@@ -449,6 +539,15 @@ export async function notifyAdminsNewEnrollment(params: {
       ...(params.company ? [`Empresa: ${params.company}`] : []),
       ...(params.city ? [`Ciudad: ${params.city}`] : []),
       ...(params.modalityLabel ? [`Modalidad: ${params.modalityLabel}`] : []),
+      ...(params.paymentTypeLabel
+        ? [`Forma de pago: ${params.paymentTypeLabel}`]
+        : []),
+      ...(params.balanceDueUsd != null
+        ? [
+            `Saldo pendiente: $${params.balanceDueUsd} USD`,
+            `Fecha tope del saldo: ${params.balanceDueDate ?? "—"}`,
+          ]
+        : []),
       `Referencia: ${params.referenceNumber}`,
       `Monto pagado: ${params.monto}`,
       "",
@@ -462,6 +561,8 @@ export async function notifyStudentReceived(params: {
   email: string;
   courseTitle?: string;
   purchasedModality?: PurchasedModality;
+  balanceDueUsd?: number;
+  balanceDueDate?: string;
   siteOrigin: string;
 }): Promise<SendEmailResult> {
   return sendEmail({
@@ -471,6 +572,8 @@ export async function notifyStudentReceived(params: {
       studentName: params.studentName,
       courseTitle: params.courseTitle,
       purchasedModality: params.purchasedModality,
+      balanceDueUsd: params.balanceDueUsd,
+      balanceDueDate: params.balanceDueDate,
       logoUrl: getLogoUrl(params.siteOrigin),
     }),
     text: [
@@ -484,6 +587,7 @@ export async function notifyStudentReceived(params: {
         ? [`Modalidad inscrita: ${purchasedModalityLabel(params.purchasedModality)}`, ""]
         : []),
       "Estamos verificando el pago con el banco. Te escribiremos a este mismo correo en cuanto quede confirmado.",
+      ...saldoPendienteTexto(params),
       "",
       BRAND.company,
     ].join("\n"),
@@ -507,7 +611,13 @@ export async function notifyStudentApproved(params: {
     text: [
       `Hola ${params.studentName.split(/\s+/)[0] || params.studentName},`,
       "",
-      "¡Gracias por inscribirte! Tu pago fue confirmado y tu cupo está reservado.",
+      params.course.balanceDueUsd != null
+        ? "¡Gracias por inscribirte! Recibimos tu inicial y tu cupo está reservado."
+        : "¡Gracias por inscribirte! Tu pago fue confirmado y tu cupo está reservado.",
+      ...saldoPendienteTexto({
+        balanceDueUsd: params.course.balanceDueUsd,
+        balanceDueDate: params.course.balanceDueDate,
+      }),
       "",
       `Curso: ${params.course.title || "—"}`,
       `Fecha: ${params.course.date || "—"}`,

@@ -79,6 +79,42 @@ export const enrollment = defineType({
       validation: (rule) => rule.required(),
     }),
     defineField({
+      name: "paymentType",
+      title: "Tipo de pago",
+      type: "string",
+      options: {
+        list: [
+          { title: "Pago total", value: "total" },
+          { title: "Inicial 20% (reserva)", value: "inicial" },
+        ],
+        layout: "radio",
+      },
+      initialValue: "total",
+    }),
+    defineField({
+      name: "balanceDueUsd",
+      title: "Saldo pendiente (USD)",
+      type: "number",
+      description: "Solo en reservas con inicial. 0 si pagó completo.",
+      readOnly: true,
+      hidden: ({ document }) => document?.paymentType !== "inicial",
+    }),
+    defineField({
+      name: "balanceDueDate",
+      title: "Fecha tope para el saldo",
+      type: "string",
+      description:
+        "5 días hábiles antes del inicio del curso. Se calcula al inscribirse.",
+      readOnly: true,
+      hidden: ({ document }) => document?.paymentType !== "inicial",
+    }),
+    defineField({
+      name: "termsAccepted",
+      title: "Aceptó términos y condiciones",
+      type: "boolean",
+      readOnly: true,
+    }),
+    defineField({
       name: "amountUsd",
       title: "Monto USD",
       type: "number",
