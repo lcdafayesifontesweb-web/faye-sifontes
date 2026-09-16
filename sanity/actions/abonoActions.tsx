@@ -2,6 +2,7 @@ import { useState } from "react";
 import {
   type DocumentActionComponent,
   type DocumentActionProps,
+  useDocumentOperation,
 } from "sanity";
 
 type AbonoDoc = {
@@ -20,6 +21,7 @@ export const NotifyAbonoAction: DocumentActionComponent = (
   props: DocumentActionProps
 ) => {
   const { id, type, draft, published, onComplete } = props;
+  const { publish } = useDocumentOperation(id, type);
   const [busy, setBusy] = useState(false);
 
   if (type !== "enrollment") return null;
@@ -43,6 +45,14 @@ export const NotifyAbonoAction: DocumentActionComponent = (
     onHandle: async () => {
       setBusy(true);
       try {
+        // El abono recien agregado vive en el borrador; el servidor lee el
+        // documento publicado. Sin publicar primero, el boton aparecia pero el
+        // envio respondia que no habia abonos nuevos.
+        if (!publish.disabled) {
+          publish.execute();
+          await new Promise((r) => setTimeout(r, 1500));
+        }
+
         const res = await fetch("/api/enrollment/notify-abono", {
           method: "POST",
           headers: { "Content-Type": "application/json" },

@@ -101,8 +101,20 @@ export async function POST(request: Request) {
     );
   }
 
-  // Se prefiere el publicado: es el que refleja lo que ya quedó guardado.
-  const doc = docs.find((d) => d._id === publishedId) ?? docs[0];
+  // Se prefiere el publicado, pero si el que tiene abonos pendientes es el
+  // borrador se usa ese: de lo contrario un desfase entre publicar y consultar
+  // haria que el boton apareciera y el envio dijera que no hay nada nuevo.
+  const publicado = docs.find((d) => d._id === publishedId);
+  const borrador = docs.find((d) => d._id === draftId);
+  const doc =
+    (publicado && abonosSinNotificar(publicado.abonos).length > 0
+      ? publicado
+      : undefined) ??
+    (borrador && abonosSinNotificar(borrador.abonos).length > 0
+      ? borrador
+      : undefined) ??
+    publicado ??
+    docs[0];
 
   const email = doc.email?.trim().toLowerCase();
   const studentName = doc.studentName?.trim();
@@ -119,7 +131,7 @@ export async function POST(request: Request) {
       ok: true,
       skipped: true,
       message:
-        "No hay abonos nuevos por notificar. Agrega el abono y publica antes de enviar el recibo.",
+        "No hay abonos nuevos por notificar: todos los registrados ya tienen su recibo enviado.",
     });
   }
 
