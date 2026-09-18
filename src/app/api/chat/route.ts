@@ -17,13 +17,27 @@ const RATE_LIMIT = 20;
 const RATE_WINDOW_MS = 10 * 60 * 1000;
 
 const MAX_HISTORY = 12;
-const GEMINI_MODEL = "gemini-3.1-flash-lite";
+/**
+ * Configurable para poder cambiar de modelo sin redesplegar: si Google
+ * retira uno o restringe el acceso, basta con ajustar la variable en Vercel.
+ */
+const GEMINI_MODEL =
+  process.env.GEMINI_MODEL?.trim() || "gemini-3.1-flash-lite";
 
 const generalContext =
   "Empresa: SS Consultores. Directora: Lcda. Faye Sifontes. Sede: CC Centinela PB local 2, Puerto La Cruz, Anzoátegui. Contacto/WhatsApp: 0424-8979101. Alianza institucional: Certificados avalados por EDUCA ante el MPPE solo para Asistente Administrativo, Contable y Excel; el resto son certificados por la Lcda. Faye Sifontes. Métodos de pago: Pago Móvil, Zelle y Efectivo.";
 
+/** Fallo pasajero: tiene sentido pedirle que reintente. */
 const FALLBACK_REPLY =
   "En este momento nuestro asistente está atendiendo múltiples consultas. Por favor, espera unos segundos o escríbenos directamente por WhatsApp al 0424-8979101 para atención inmediata.";
+
+/**
+ * Fallo de configuración o de permisos: no se arregla esperando unos
+ * segundos, así que prometerlo seria enganar al visitante. Se le da la via
+ * que si funciona.
+ */
+const FALLBACK_NO_DISPONIBLE =
+  "Nuestro asistente no está disponible en este momento. Escríbenos por WhatsApp al 0424-8979101 y te atendemos de una vez.";
 
 const COURSE_BY_SLUG_QUERY = `*[_type == "course" && slug.current == $slug][0]{
   title,
@@ -231,8 +245,20 @@ export async function POST(request: Request) {
 
     if (!response.ok) {
       const errText = await response.text();
-      console.error("[GEMINI ERROR]:", response.status, errText);
-      return okMessage(FALLBACK_REPLY);
+      // 401/403/404 no son saturacion: son clave invalida, proyecto sin
+      // acceso o modelo inexistente. Se registran aparte porque requieren
+      // intervencion en la cuenta de Google, no reintentar.
+      const esConfiguracion = [401, 403, 404].includes(response.status);
+      console.error(
+        esConfiguracion
+          ? `[GEMINI CONFIG] El asistente no puede responder: HTTP ${response.status} con el modelo "${GEMINI_MODEL}". Revisa GEMINI_API_KEY y el acceso del proyecto en Google AI Studio.`
+          : "[GEMINI ERROR]:",
+        response.status,
+        errText
+      );
+      return okMessage(
+        esConfiguracion ? FALLBACK_NO_DISPONIBLE : FALLBACK_REPLY
+      );
     }
 
     const data = (await response.json()) as GeminiGenerateResponse;
