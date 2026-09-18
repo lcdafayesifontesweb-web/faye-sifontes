@@ -18,11 +18,19 @@ const RATE_WINDOW_MS = 10 * 60 * 1000;
 
 const MAX_HISTORY = 12;
 /**
- * Configurable para poder cambiar de modelo sin redesplegar: si Google
- * retira uno o restringe el acceso, basta con ajustar la variable en Vercel.
+ * El asistente corre sobre Groq.
+ *
+ * Se migro desde Gemini porque Google denego el acceso a la cuenta
+ * ("Your project has been denied access") y no dejaba crear proyectos
+ * nuevos, asi que todas las consultas caian al mensaje de respaldo.
+ *
+ * La API de Groq es compatible con el formato de OpenAI, de modo que el
+ * prompt, los datos del curso y las reglas de respuesta no cambiaron.
  */
-const GEMINI_MODEL =
-  process.env.GEMINI_MODEL?.trim() || "gemini-3.1-flash-lite";
+const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
+
+/** Configurable para cambiar de modelo sin redesplegar. */
+const CHAT_MODEL = process.env.GROQ_MODEL?.trim() || "openai/gpt-oss-120b";
 
 const generalContext =
   "Empresa: SS Consultores. Directora: Lcda. Faye Sifontes. Sede: CC Centinela PB local 2, Puerto La Cruz, Anzoátegui. Contacto/WhatsApp: 0424-8979101. Alianza institucional: Certificados avalados por EDUCA ante el MPPE solo para Asistente Administrativo, Contable y Excel; el resto son certificados por la Lcda. Faye Sifontes. Métodos de pago: Pago Móvil, Zelle y Efectivo.";
@@ -71,16 +79,14 @@ interface SanityCourseChatData {
   gallery?: unknown[];
 }
 
-interface GeminiContent {
-  role: "user" | "model";
-  parts: Array<{ text: string }>;
+interface ChatCompletionMessage {
+  role: "system" | "user" | "assistant";
+  content: string;
 }
 
-interface GeminiGenerateResponse {
-  candidates?: Array<{
-    content?: { parts?: Array<{ text?: string }> };
-  }>;
-  error?: { code?: number; message?: string; status?: string };
+interface ChatCompletionResponse {
+  choices?: Array<{ message?: { content?: string } }>;
+  error?: { message?: string; code?: string };
 }
 
 function okMessage(message: string) {
@@ -109,10 +115,11 @@ function sanitizeMessages(messages: unknown): ChatMessage[] {
     .slice(-MAX_HISTORY);
 }
 
-function toGeminiContents(messages: ChatMessage[]): GeminiContent[] {
+function toChatMessages(messages: ChatMessage[]): ChatCompletionMessage[] {
   return messages.map((msg) => ({
-    role: msg.role === "assistant" ? ("model" as const) : ("user" as const),
-    parts: [{ text: msg.content }],
+    role:
+      msg.role === "assistant" ? ("assistant" as const) : ("user" as const),
+    content: msg.content,
   }));
 }
 
@@ -152,13 +159,13 @@ export async function POST(request: Request) {
     );
   }
 
-  const apiKey = process.env.GEMINI_API_KEY?.trim();
+  const apiKey = process.env.GROQ_API_KEY?.trim();
   if (!apiKey) {
-    console.error("[api/chat] GEMINI_API_KEY ausente o vacía.");
+    console.error("[api/chat] GROQ_API_KEY ausente o vacía.");
     return NextResponse.json(
       {
         error:
-          "GEMINI_API_KEY no está configurada en el servidor. Configúrala en Vercel / .env.local.",
+          "GROQ_API_KEY no está configurada en el servidor. Configúrala en Vercel / .env.local.",
       },
       { status: 500 }
     );
@@ -224,22 +231,22 @@ export async function POST(request: Request) {
   };
 
   const systemPrompt = buildSystemInstruction(courseForPrompt);
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`;
-
   try {
-    const response = await fetch(url, {
+    const response = await fetch(GROQ_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
       cache: "no-store",
       body: JSON.stringify({
-        system_instruction: {
-          parts: [{ text: systemPrompt }],
-        },
-        contents: toGeminiContents(messages),
-        generationConfig: {
-          temperature: 0.3,
-          maxOutputTokens: 512,
-        },
+        model: CHAT_MODEL,
+        messages: [
+          { role: "system", content: systemPrompt },
+          ...toChatMessages(messages),
+        ],
+        temperature: 0.3,
+        max_tokens: 512,
       }),
     });
 
@@ -251,8 +258,8 @@ export async function POST(request: Request) {
       const esConfiguracion = [401, 403, 404].includes(response.status);
       console.error(
         esConfiguracion
-          ? `[GEMINI CONFIG] El asistente no puede responder: HTTP ${response.status} con el modelo "${GEMINI_MODEL}". Revisa GEMINI_API_KEY y el acceso del proyecto en Google AI Studio.`
-          : "[GEMINI ERROR]:",
+          ? `[CHAT CONFIG] El asistente no puede responder: HTTP ${response.status} con el modelo "${CHAT_MODEL}". Revisa GROQ_API_KEY y que el modelo siga disponible.`
+          : "[CHAT ERROR]:",
         response.status,
         errText
       );
@@ -261,21 +268,17 @@ export async function POST(request: Request) {
       );
     }
 
-    const data = (await response.json()) as GeminiGenerateResponse;
-    const replyText =
-      data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+    const data = (await response.json()) as ChatCompletionResponse;
+    const replyText = data.choices?.[0]?.message?.content?.trim() || "";
 
     if (!replyText) {
-      console.error(
-        "[GEMINI ERROR]: empty candidates",
-        JSON.stringify(data)
-      );
+      console.error("[CHAT ERROR]: respuesta vacía", JSON.stringify(data));
       return okMessage(FALLBACK_REPLY);
     }
 
     return okMessage(replyText);
   } catch (err) {
-    console.error("[GEMINI ERROR]:", err);
+    console.error("[CHAT ERROR]:", err);
     return okMessage(FALLBACK_REPLY);
   }
 }
