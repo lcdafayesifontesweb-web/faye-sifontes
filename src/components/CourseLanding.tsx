@@ -1135,7 +1135,7 @@ function PaymentTypePicker({
           onClick={() => onChange("inicial")}
           titulo={`Reserva con ${Math.round(PORCENTAJE_INICIAL * 100)}%`}
           monto={`$${inicialUsd} USD${bs(inicialUsd)}`}
-          detalle={`Quedas debiendo $${saldoUsd} USD.`}
+          detalle={`Quedarían pendientes $${saldoUsd} USD.`}
         />
       </div>
 
@@ -1241,8 +1241,8 @@ function SeatsNotice({
           ? "Queda 1 cupo presencial"
           : `Quedan ${seatsLeft} cupos presenciales`}
       </span>
-      {quedanPocos ? " — los puestos del salón son limitados." : "."}{" "}
-      La modalidad online no tiene límite.
+      {quedanPocos ? " — los puestos del salón son limitados." : "."}
+      {hayOnline && " La modalidad online no tiene límite."}
     </p>
   );
 }
