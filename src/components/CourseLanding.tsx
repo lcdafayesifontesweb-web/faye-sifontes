@@ -95,6 +95,7 @@ export default function CourseLanding({ course }: CourseLandingProps) {
   const [tasaData, setTasaData] = useState<TasaResponse | null>(null);
   const [tasaError, setTasaError] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const pagoMovilRef = useRef<HTMLDivElement>(null);
 
   // Si el curso es de una sola modalidad, forzar el estado de compra
   useEffect(() => {
@@ -217,10 +218,29 @@ export default function CourseLanding({ course }: CourseLandingProps) {
     });
   };
 
+  /**
+   * Al pasar al paso de pago hay que dejar a la vista los datos del Pago
+   * Móvil, no el encabezado de la tarjeta: quedarse arriba mostraba precios y
+   * modalidad, y el cliente no encontraba qué hacer.
+   *
+   * Va en un efecto y no dentro del handler porque al cambiar de paso el
+   * bloque todavía no está montado y no habría destino al que llegar.
+   */
+  useEffect(() => {
+    if (step !== "payment") return;
+    // Sin requestAnimationFrame a proposito: no se dispara mientras la
+    // pestana esta en segundo plano, y entonces el cliente volveria y se
+    // encontraria la pagina sin mover. Al correr el efecto el nodo ya esta
+    // en el DOM, asi que se puede desplazar de una vez.
+    pagoMovilRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }, [step]);
+
   const handleFormSubmit = (e: FormEvent) => {
     e.preventDefault();
     setStep("payment");
-    scrollToRegistration();
   };
 
   const validateProofFile = (file: File | null): string | null => {
@@ -773,6 +793,27 @@ export default function CourseLanding({ course }: CourseLandingProps) {
 
                   {step === "payment" && (
                     <form onSubmit={handlePaymentSubmit} className="space-y-5">
+                      {/* Destino del scroll al entrar a este paso. scroll-mt
+                          deja el aviso por debajo del encabezado fijo. */}
+                      <div
+                        ref={pagoMovilRef}
+                        className="scroll-mt-24 rounded-xl border-2 border-brand-blue bg-brand-50 px-4 py-3.5"
+                      >
+                        <p className="flex items-center gap-2 font-bold text-brand-800 text-sm">
+                          <Smartphone className="w-4 h-4 shrink-0" />
+                          Ahora realiza tu Pago Móvil
+                        </p>
+                        <p className="mt-1.5 text-xs leading-relaxed text-slate-600">
+                          Transfiere{" "}
+                          <span className="font-bold text-brand-800">
+                            ${aPagarUsd} USD
+                            {aPagarBs != null && ` (Bs. ${formatBs(aPagarBs)})`}
+                          </span>{" "}
+                          con los datos de abajo. Luego vuelve aquí, escribe el
+                          número de referencia y sube la captura del pago.
+                        </p>
+                      </div>
+
                       <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
                         <div className="flex items-center gap-2 mb-3">
                           <Smartphone className="w-5 h-5 text-brand-600" />
