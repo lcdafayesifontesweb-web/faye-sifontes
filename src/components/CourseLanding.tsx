@@ -96,6 +96,7 @@ export default function CourseLanding({ course }: CourseLandingProps) {
   const [tasaError, setTasaError] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pagoMovilRef = useRef<HTMLDivElement>(null);
+  const leadEnviado = useRef(false);
 
   // Si el curso es de una sola modalidad, forzar el estado de compra
   useEffect(() => {
@@ -240,6 +241,24 @@ export default function CourseLanding({ course }: CourseLandingProps) {
 
   const handleFormSubmit = (e: FormEvent) => {
     e.preventDefault();
+
+    // Meta Pixel: el visitante completo sus datos, acepto los terminos y pidio
+    // continuar. Es el primer punto con intencion real de inscribirse, y el
+    // que sirve para optimizar la campana: PageView se dispara con solo cargar
+    // la pagina y no distingue a quien de verdad quiere el cupo.
+    //
+    // Solo una vez por visita: volver al formulario y continuar de nuevo no es
+    // un lead nuevo, e inflarlo enganaria a la optimizacion.
+    if (!leadEnviado.current) {
+      leadEnviado.current = true;
+      window.fbq?.("track", "Lead", {
+        content_name: course.title,
+        content_category: "curso",
+        value: selectedUsd,
+        currency: "USD",
+      });
+    }
+
     setStep("payment");
   };
 
@@ -320,6 +339,16 @@ export default function CourseLanding({ course }: CourseLandingProps) {
         );
         return;
       }
+
+      // Meta Pixel: inscripcion registrada con su comprobante. No se usa
+      // "Purchase" porque el pago todavia no esta verificado: queda pendiente
+      // de que se confirme la transferencia con el banco.
+      window.fbq?.("track", "CompleteRegistration", {
+        content_name: course.title,
+        value: aPagarUsd,
+        currency: "USD",
+        status: paymentType === "inicial" ? "reserva" : "pago_completo",
+      });
 
       setStep("success");
       scrollToRegistration();
