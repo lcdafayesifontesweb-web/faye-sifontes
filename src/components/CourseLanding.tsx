@@ -21,6 +21,7 @@ import {
 import type { CoursePageData } from "@/sanity/queries";
 import { BRAND } from "@/data/coursesData";
 import { normalizeFeaturesList } from "@/lib/features";
+import { trackPixel } from "@/lib/pixel";
 import {
   formatBs,
   usdToBs,
@@ -97,6 +98,8 @@ export default function CourseLanding({ course }: CourseLandingProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pagoMovilRef = useRef<HTMLDivElement>(null);
   const leadEnviado = useRef(false);
+  const viewContentEnviado = useRef(false);
+  const checkoutEnviado = useRef(false);
 
   // Si el curso es de una sola modalidad, forzar el estado de compra
   useEffect(() => {
@@ -219,6 +222,43 @@ export default function CourseLanding({ course }: CourseLandingProps) {
     });
   };
 
+  // Meta Pixel: el visitante abrio la ficha de este curso. Es el evento con
+  // mas volumen del embudo, y con un presupuesto pequeno es el unico que junta
+  // datos suficientes para que Meta aprenda. Ademas arma el publico de
+  // retargeting "vio este curso y no se inscribio".
+  //
+  // Sin `value` a proposito: al montar todavia no se aplico la preseleccion de
+  // modalidad segun la region, asi que el precio de este cierre puede no ser el
+  // que termina viendo el visitante. El importe real viaja en los eventos del
+  // final, que son los que sirven para calcular retorno.
+  useEffect(() => {
+    if (viewContentEnviado.current) return;
+    viewContentEnviado.current = true;
+    trackPixel("ViewContent", {
+      content_name: course.title,
+      content_category: "curso",
+    });
+  }, [course.title]);
+
+  /**
+   * CTA «Reserva tu lugar»: lleva al formulario y avisa al pixel.
+   *
+   * Va aparte de `scrollToRegistration` porque esa funcion tambien se usa al
+   * terminar la inscripcion, y ahi no hay ninguna compra que iniciar.
+   */
+  const handleCtaReserva = () => {
+    if (!checkoutEnviado.current) {
+      checkoutEnviado.current = true;
+      trackPixel("InitiateCheckout", {
+        content_name: course.title,
+        content_category: "curso",
+        value: selectedUsd,
+        currency: "USD",
+      });
+    }
+    scrollToRegistration();
+  };
+
   /**
    * Al pasar al paso de pago hay que dejar a la vista los datos del Pago
    * Móvil, no el encabezado de la tarjeta: quedarse arriba mostraba precios y
@@ -251,7 +291,7 @@ export default function CourseLanding({ course }: CourseLandingProps) {
     // un lead nuevo, e inflarlo enganaria a la optimizacion.
     if (!leadEnviado.current) {
       leadEnviado.current = true;
-      window.fbq?.("track", "Lead", {
+      trackPixel("Lead", {
         content_name: course.title,
         content_category: "curso",
         value: selectedUsd,
@@ -343,7 +383,7 @@ export default function CourseLanding({ course }: CourseLandingProps) {
       // Meta Pixel: inscripcion registrada con su comprobante. No se usa
       // "Purchase" porque el pago todavia no esta verificado: queda pendiente
       // de que se confirme la transferencia con el banco.
-      window.fbq?.("track", "CompleteRegistration", {
+      trackPixel("CompleteRegistration", {
         content_name: course.title,
         value: aPagarUsd,
         currency: "USD",
@@ -433,7 +473,7 @@ export default function CourseLanding({ course }: CourseLandingProps) {
               <div className="flex flex-wrap gap-4">
                 <button
                   type="button"
-                  onClick={scrollToRegistration}
+                  onClick={handleCtaReserva}
                   className="cta-pulse inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-brand-blue hover:bg-brand-600 text-white font-bold text-lg shadow-xl transition-all"
                 >
                   Reserva tu lugar
@@ -1080,7 +1120,7 @@ export default function CourseLanding({ course }: CourseLandingProps) {
         <div className="fixed bottom-0 inset-x-0 p-4 bg-white border-t border-slate-200 shadow-2xl lg:hidden z-40">
           <button
             type="button"
-            onClick={scrollToRegistration}
+            onClick={handleCtaReserva}
             className="block w-full text-center py-3.5 rounded-xl bg-brand-blue text-white font-bold cta-pulse"
           >
             Reserva tu lugar
