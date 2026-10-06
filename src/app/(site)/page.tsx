@@ -48,12 +48,12 @@ export default async function HomePage({
   return (
     <>
       <DirectorBioSection />
+      <ServicesSection />
       <HeroSection courseCount={courses.length} searchCourses={searchCourses} />
       <CategoriesSection
         categories={categoryCards}
         activeCategory={activeCategory}
       />
-      <ServicesSection />
       <Suspense
         fallback={
           <section id="cursos" className="py-20 bg-white">
