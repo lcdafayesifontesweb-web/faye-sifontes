@@ -31,15 +31,16 @@ export default function HeroSection({
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28">
         <div className="text-center max-w-4xl mx-auto mb-10 animate-fade-in-up">
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight mb-6">
-            Formación profesional que{" "}
+            Consultoría Contable, Legal y{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-300 to-brand-blue">
-              impulsa tu carrera
+              Formación Profesional de Alto Nivel
             </span>
           </h1>
 
-          <p className="text-lg sm:text-xl text-white/80 max-w-2xl mx-auto leading-relaxed">
-            Cursos presenciales y online en contabilidad, tributos, derecho laboral
-            y liderazgo. Aprende con expertos del sector administrativo, tributario, petrolero y legal.
+          <p className="text-lg sm:text-xl text-white/80 max-w-3xl mx-auto leading-relaxed">
+            Asesoría integral para el blindaje fiscal y financiero de tu empresa.
+            Potenciamos tu negocio y capacitamos a tu equipo con expertos del
+            sector tributario, laboral, petrolero y gerencial.
           </p>
         </div>
 

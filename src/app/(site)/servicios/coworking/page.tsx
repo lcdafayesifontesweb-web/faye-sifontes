@@ -152,6 +152,33 @@ export default function CoworkingPage() {
         </div>
       </section>
 
+      {/* Video de la sala */}
+      <section className="py-16 lg:py-20 bg-brand-dark">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
+              Mira la sala de cursos
+            </h2>
+            <p className="text-white/70 max-w-2xl mx-auto">
+              Recorrido de nuestras instalaciones en Puerto La Cruz, listas
+              para reuniones y capacitaciones.
+            </p>
+          </div>
+
+          <div className="relative aspect-[9/16] w-full max-w-[320px] mx-auto overflow-hidden rounded-2xl bg-black shadow-xl ring-1 ring-white/10">
+            <iframe
+              src="https://www.youtube-nocookie.com/embed/0MHIY9Jg_tw?rel=0"
+              title="Salas disponibles para cursos en Puerto La Cruz"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              referrerPolicy="strict-origin-when-cross-origin"
+              allowFullScreen
+              loading="lazy"
+              className="absolute inset-0 h-full w-full border-0"
+            />
+          </div>
+        </div>
+      </section>
+
       {/* Galería */}
       <section className="py-16 lg:py-20 bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
