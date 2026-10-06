@@ -40,6 +40,7 @@ import {
   PORCENTAJE_INICIAL,
   type PaymentType,
 } from "@/lib/pagos";
+import { getWhatsAppUrl } from "@/lib/whatsapp";
 import CertificationBadge from "./CertificationBadge";
 import CourseCountdown from "./CourseCountdown";
 import CourseGallery from "./CourseGallery";
@@ -72,6 +73,14 @@ export default function CourseLanding({ course }: CourseLandingProps) {
   const controlaCupos = typeof seatsLeft === "number";
   const presencialAgotado = seatsLeft === 0;
   const quedanPocos = controlaCupos && seatsLeft > 0 && seatsLeft <= 5;
+
+  // El texto visible de "Fecha" (por confirmar, agotado, etc.) no decide
+  // nada. El panel de reserva solo aparece cuando hay un inicio exacto
+  // en Sanity; si no, el botón abre WhatsApp para la próxima edición.
+  const reservaPorWhatsApp = !tieneFechaReal(course.startsAt);
+  const reservaWhatsAppUrl = getWhatsAppUrl(
+    `Hola, me interesa el curso ${course.title}. Quisiera reservar un cupo para el próximo.`
+  );
 
   const [step, setStep] = useState<PaymentStep>("form");
   const [modality, setModality] = useState<PurchaseModality>(
@@ -240,6 +249,17 @@ export default function CourseLanding({ course }: CourseLandingProps) {
     });
   }, [course.title]);
 
+  const trackCheckout = () => {
+    if (checkoutEnviado.current) return;
+    checkoutEnviado.current = true;
+    trackPixel("InitiateCheckout", {
+      content_name: course.title,
+      content_category: "curso",
+      value: selectedUsd,
+      currency: "USD",
+    });
+  };
+
   /**
    * CTA «Reserva tu lugar»: lleva al formulario y avisa al pixel.
    *
@@ -247,15 +267,7 @@ export default function CourseLanding({ course }: CourseLandingProps) {
    * terminar la inscripcion, y ahi no hay ninguna compra que iniciar.
    */
   const handleCtaReserva = () => {
-    if (!checkoutEnviado.current) {
-      checkoutEnviado.current = true;
-      trackPixel("InitiateCheckout", {
-        content_name: course.title,
-        content_category: "curso",
-        value: selectedUsd,
-        currency: "USD",
-      });
-    }
+    trackCheckout();
     scrollToRegistration();
   };
 
@@ -471,13 +483,25 @@ export default function CourseLanding({ course }: CourseLandingProps) {
                 {course.description}
               </p>
               <div className="flex flex-wrap gap-4">
-                <button
-                  type="button"
-                  onClick={handleCtaReserva}
-                  className="cta-pulse inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-brand-blue hover:bg-brand-600 text-white font-bold text-lg shadow-xl transition-all"
-                >
-                  Reserva tu lugar
-                </button>
+                {reservaPorWhatsApp ? (
+                  <a
+                    href={reservaWhatsAppUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={trackCheckout}
+                    className="cta-pulse inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-brand-blue hover:bg-brand-600 text-white font-bold text-lg shadow-xl transition-all"
+                  >
+                    Reserva tu lugar
+                  </a>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleCtaReserva}
+                    className="cta-pulse inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-brand-blue hover:bg-brand-600 text-white font-bold text-lg shadow-xl transition-all"
+                  >
+                    Reserva tu lugar
+                  </button>
+                )}
               </div>
             </div>
 
@@ -622,6 +646,7 @@ export default function CourseLanding({ course }: CourseLandingProps) {
                   courseTitle={course.title}
                 />
 
+                {!reservaPorWhatsApp && (
                 <div
                   id="registro"
                   className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden scroll-mt-6"
@@ -1092,6 +1117,7 @@ export default function CourseLanding({ course }: CourseLandingProps) {
                   )}
                 </div>
               </div>
+                )}
               </div>
             </div>
           </div>
@@ -1118,17 +1144,35 @@ export default function CourseLanding({ course }: CourseLandingProps) {
 
       {step === "form" && (
         <div className="fixed bottom-0 inset-x-0 p-4 bg-white border-t border-slate-200 shadow-2xl lg:hidden z-40">
-          <button
-            type="button"
-            onClick={handleCtaReserva}
-            className="block w-full text-center py-3.5 rounded-xl bg-brand-blue text-white font-bold cta-pulse"
-          >
-            Reserva tu lugar
-          </button>
+          {reservaPorWhatsApp ? (
+            <a
+              href={reservaWhatsAppUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={trackCheckout}
+              className="block w-full text-center py-3.5 rounded-xl bg-brand-blue text-white font-bold cta-pulse"
+            >
+              Reserva tu lugar
+            </a>
+          ) : (
+            <button
+              type="button"
+              onClick={handleCtaReserva}
+              className="block w-full text-center py-3.5 rounded-xl bg-brand-blue text-white font-bold cta-pulse"
+            >
+              Reserva tu lugar
+            </button>
+          )}
         </div>
       )}
     </div>
   );
+}
+
+/** True si el curso tiene un inicio exacto en Sanity, no solo texto de fecha. */
+function tieneFechaReal(startsAt?: string): boolean {
+  if (!startsAt?.trim()) return false;
+  return Number.isFinite(new Date(startsAt).getTime());
 }
 
 function FichaItem({
