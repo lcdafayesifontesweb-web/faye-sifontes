@@ -36,6 +36,7 @@ export interface SanityCourse {
   currency?: string;
   /** Cupos presenciales disponibles. Ausente = sin control de cupos. */
   seatsPresencial?: number;
+  permiteReserva?: boolean;
   featured?: boolean;
   certifiedBy?: string;
   coverImage?: SanityImage;

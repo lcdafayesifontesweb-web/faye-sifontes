@@ -64,6 +64,7 @@ export const COURSE_BY_SLUG_QUERY = `*[_type == "course" && slug.current == $slu
   price,
   priceOnline,
   currency,
+  permiteReserva,
   featured,
   certifiedBy,
   coverImage,
@@ -178,6 +179,8 @@ export interface CoursePageData {
   price: number;
   priceOnline: number;
   currency: string;
+  /** Si el curso acepta reserva con el 20%. Se enciende por curso en Sanity. */
+  permiteReserva: boolean;
   featured: boolean;
   imageGradient: string;
   coverImageUrl?: string;
@@ -315,6 +318,7 @@ function mapSanityCoursePage(course: SanityCourse): CoursePageData {
     price: course.price ?? 0,
     priceOnline: course.priceOnline ?? 0,
     currency: course.currency ?? "USD",
+    permiteReserva: course.permiteReserva === true,
     featured: course.featured ?? false,
     imageGradient:
       CATEGORY_GRADIENTS[course.category] ??

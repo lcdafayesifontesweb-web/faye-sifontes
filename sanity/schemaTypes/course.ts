@@ -127,6 +127,15 @@ export const course = defineType({
       validation: (rule) => rule.required().min(0),
     }),
     defineField({
+      name: "permiteReserva",
+      title: "Permitir reserva con 20%",
+      type: "boolean",
+      fieldset: "pricing",
+      initialValue: false,
+      description:
+        "Apagado, el alumno solo puede pagar el curso completo. Encendido, puede reservar con el 20% y pagar el saldo hasta 5 dias habiles antes del inicio. Necesita la fecha y hora de inicio cargada.",
+    }),
+    defineField({
       name: "currency",
       title: "Moneda",
       type: "string",

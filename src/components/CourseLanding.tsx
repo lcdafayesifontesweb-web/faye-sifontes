@@ -174,11 +174,12 @@ export default function CourseLanding({ course }: CourseLandingProps) {
   const modalityLabel =
     modality === "online" ? "Online" : "Presencial";
 
-  // La reserva necesita fecha de inicio para calcular el tope, y ese tope debe
-  // seguir vigente.
+  // La reserva se enciende por curso en Sanity. Ademas necesita fecha de
+  // inicio para calcular el tope, y ese tope debe seguir vigente: apagada la
+  // casilla, o vencido el plazo, el curso se cobra completo.
   const admiteInicial = useMemo(
-    () => permiteInicial(course.startsAt),
-    [course.startsAt]
+    () => course.permiteReserva && permiteInicial(course.startsAt),
+    [course.permiteReserva, course.startsAt]
   );
 
   const fechaTope = useMemo(() => {
