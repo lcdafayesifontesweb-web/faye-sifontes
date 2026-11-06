@@ -38,9 +38,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className="overflow-x-hidden">
+    <html lang="es" className="overflow-x-clip">
       <body
-        className={`${inter.variable} font-sans antialiased bg-white text-brand-dark overflow-x-hidden`}
+        className={`${inter.variable} font-sans antialiased bg-white text-brand-dark overflow-x-clip`}
       >
         {children}
         <WhatsAppFloat />

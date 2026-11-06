@@ -15,7 +15,7 @@ export default function SiteLayout({
       <MetaPixel />
       <HomeScrollHandler />
       <Header />
-      <main className="min-w-0 overflow-x-hidden">{children}</main>
+      <main className="min-w-0 overflow-x-clip">{children}</main>
       <Footer />
     </>
   );

@@ -23,7 +23,10 @@
 
 html {
   scroll-behavior: smooth;
-  overflow-x: hidden;
+  /* clip y no hidden: «hidden» convierte al elemento en contenedor de
+     scroll y rompe cualquier position:sticky que tenga dentro. «clip»
+     corta igual el desborde horizontal sin crear ese contenedor. */
+  overflow-x: clip;
 }
 
 body {
@@ -31,7 +34,10 @@ body {
   color: var(--color-brand-dark);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
+  /* clip y no hidden: «hidden» convierte al elemento en contenedor de
+     scroll y rompe cualquier position:sticky que tenga dentro. «clip»
+     corta igual el desborde horizontal sin crear ese contenedor. */
+  overflow-x: clip;
 }
 
 @keyframes fade-in-up {
