@@ -1,16 +1,10 @@
 import { Users, BookOpen, MapPin } from "lucide-react";
-import SearchBar from "./SearchBar";
-import type { SearchCourseItem } from "@/sanity/queries";
 
 interface HeroSectionProps {
   courseCount: number;
-  searchCourses: SearchCourseItem[];
 }
 
-export default function HeroSection({
-  courseCount,
-  searchCourses,
-}: HeroSectionProps) {
+export default function HeroSection({ courseCount }: HeroSectionProps) {
   const stats = [
     {
       icon: BookOpen,
@@ -44,9 +38,7 @@ export default function HeroSection({
           </p>
         </div>
 
-        <SearchBar courses={searchCourses} />
-
-        <div className="mt-14 grid grid-cols-3 gap-2 sm:gap-6 max-w-lg mx-auto">
+        <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-6 max-w-lg mx-auto">
           {stats.map((stat) => (
             <div key={stat.label} className="text-center min-w-0">
               <stat.icon className="w-5 h-5 text-brand-blue mx-auto mb-2" />

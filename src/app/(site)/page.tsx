@@ -31,13 +31,6 @@ export default async function HomePage({
     getInstructorsForHome(),
   ]);
 
-  const searchCourses = courses.map((c) => ({
-    id: c.id,
-    slug: c.slug,
-    title: c.title,
-    date: c.date,
-  }));
-
   const categoryCards = categoriesWithCounts(countCoursesByCategory(courses));
   const activeCategory =
     params.categoria &&
@@ -49,7 +42,7 @@ export default async function HomePage({
     <>
       <DirectorBioSection />
       <ServicesSection />
-      <HeroSection courseCount={courses.length} searchCourses={searchCourses} />
+      <HeroSection courseCount={courses.length} />
       <CategoriesSection
         categories={categoryCards}
         activeCategory={activeCategory}

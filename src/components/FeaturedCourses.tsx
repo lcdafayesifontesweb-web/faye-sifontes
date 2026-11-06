@@ -16,6 +16,7 @@ import { categories, type CourseArea } from "@/data/coursesData";
 import { normalizeFeaturesList } from "@/lib/features";
 import CertificationBadge from "./CertificationBadge";
 import CourseCountdown from "./CourseCountdown";
+import SearchBar from "./SearchBar";
 
 const PAGE_SIZE = 6;
 
@@ -101,7 +102,7 @@ export default function FeaturedCourses({ courses }: FeaturedCoursesProps) {
   return (
     <section id="cursos" className="py-20 bg-white scroll-mt-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col gap-6 mb-10">
+        <div className="mb-6">
           <div>
             <span className="inline-block text-sm font-semibold text-brand-blue uppercase tracking-wider mb-2">
               Catálogo completo
@@ -118,7 +119,24 @@ export default function FeaturedCourses({ courses }: FeaturedCoursesProps) {
               })}
             </p>
           </div>
+        </div>
 
+        {/*
+          El buscador queda pegado mientras se recorre el catalogo: en el hero
+          no se entendia que buscaba cursos, y al bajar desaparecia justo
+          cuando hacia falta. El contenedor que lo sostiene abarca toda la
+          seccion, asi que se despega al salir de los cursos.
+
+          Los desplazamientos son la altura medida del header de Header.tsx
+          (81 / 97 / 113 / 121 px): su alto lo marca el logo, que crece por
+          punto de quiebre. Si cambia el logo o su padding, hay que ajustarlos
+          aqui o el buscador queda por debajo del header.
+        */}
+        <div className="sticky top-[81px] sm:top-[97px] md:top-[113px] lg:top-[121px] z-30 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-3 bg-white/95 backdrop-blur-md border-b border-slate-100">
+          <SearchBar courses={courses} />
+        </div>
+
+        <div className="mt-6 mb-10">
           <div className="flex flex-wrap gap-2">
             <FilterPill
               label="Todos"
