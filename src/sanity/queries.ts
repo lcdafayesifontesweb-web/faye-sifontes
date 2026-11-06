@@ -2,6 +2,7 @@ import { client } from "./client";
 import { urlFor } from "./image";
 import type { SanityCourse, SanityInstructor } from "./types";
 import { normalizeFeaturesList } from "@/lib/features";
+import { cursoYaComenzo, TEXTO_SIN_FECHA } from "@/lib/vigencia";
 
 export const ALL_COURSES_QUERY = `*[_type == "course"]
   | order(coalesce(featured, false) desc, _createdAt desc) {
@@ -224,13 +225,18 @@ function resolveCourseInstructors(course: SanityCourse): SanityInstructor[] {
 }
 
 function mapSanityCourse(course: SanityCourse): HomeCourse {
+  // Pasada la fecha de inicio la edicion deja de estar vigente: el curso
+  // vuelve a «Por confirmar» hasta que le carguen la proxima. Las paginas
+  // revalidan cada 60 s, asi que el cambio ocurre solo.
+  const vencido = cursoYaComenzo(course.startsAt);
+
   return {
     id: course._id,
     slug: course.slug,
     title: course.title,
     category: course.category,
     shortDescription: course.description,
-    date: course.date,
+    date: vencido ? TEXTO_SIN_FECHA : course.date,
     schedule: course.schedule,
     modalityLabel: MODALITY_LABELS[course.modality] ?? course.modality,
     features: normalizeFeaturesList(course.features),
@@ -238,7 +244,7 @@ function mapSanityCourse(course: SanityCourse): HomeCourse {
     priceOnline: course.priceOnline ?? 0,
     currency: course.currency ?? "USD",
     featured: course.featured ?? false,
-    startsAt: course.startsAt,
+    startsAt: vencido ? undefined : course.startsAt,
     imageGradient:
       CATEGORY_GRADIENTS[course.category] ??
       "from-brand-700 via-brand-800 to-brand-900",
@@ -304,13 +310,18 @@ function mapSanityCoursePage(course: SanityCourse): CoursePageData {
       ? Math.max(0, course.seatsPresencial)
       : undefined;
 
+  // Pasada la fecha de inicio la edicion deja de estar vigente: el curso
+  // vuelve a «Por confirmar» hasta que le carguen la proxima. Las paginas
+  // revalidan cada 60 s, asi que el cambio ocurre solo.
+  const vencido = cursoYaComenzo(course.startsAt);
+
   return {
     id: course._id,
     slug: course.slug,
     title: course.title,
     description: course.description,
-    date: course.date,
-    startsAt: course.startsAt,
+    date: vencido ? TEXTO_SIN_FECHA : course.date,
+    startsAt: vencido ? undefined : course.startsAt,
     schedule: course.schedule,
     modality: course.modality ?? "",
     modalityLabel: MODALITY_LABELS[course.modality] ?? course.modality,
@@ -326,7 +337,7 @@ function mapSanityCoursePage(course: SanityCourse): CoursePageData {
     coverImageUrl: course.coverImage
       ? urlFor(course.coverImage).width(1200).height(600).url()
       : undefined,
-    seatsLeft,
+    seatsLeft: vencido ? undefined : seatsLeft,
     gallery: mapGalleryImages(course.gallery, course.title),
     instructors: instructors.map((instructor) => ({
       id: instructor.id,
