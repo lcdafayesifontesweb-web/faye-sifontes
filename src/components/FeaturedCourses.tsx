@@ -277,8 +277,15 @@ function CourseCard({ course }: { course: HomeCourse }) {
           : "border border-slate-100"
       }`}
     >
+      {/*
+        Los cursos sin fecha vigente salen en blanco y negro: con 26 tarjetas
+        iguales no se distinguia cual se podia comprar hoy. El color queda
+        reservado para lo que esta a la venta.
+      */}
       <div
-        className={`h-44 bg-gradient-to-br ${course.imageGradient} relative p-5 flex flex-col justify-between overflow-hidden`}
+        className={`h-44 bg-gradient-to-br ${course.imageGradient} relative p-5 flex flex-col justify-between overflow-hidden ${
+          course.activo ? "" : "grayscale"
+        }`}
       >
         {course.coverImageUrl && (
           <Image
@@ -292,8 +299,8 @@ function CourseCard({ course }: { course: HomeCourse }) {
         <div className="relative flex items-start justify-between gap-3">
           <div className="flex flex-col items-start gap-2 min-w-0">
             {course.featured && (
-              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/20 backdrop-blur text-white text-xs font-semibold">
-                <Star className="w-3 h-3 fill-brand-blue text-brand-blue" />
+              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-amber-400 text-brand-dark text-xs font-bold shadow-md">
+                <Star className="w-3 h-3 fill-brand-dark" />
                 Destacado
               </span>
             )}

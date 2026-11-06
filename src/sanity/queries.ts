@@ -106,6 +106,12 @@ const CATEGORY_GRADIENTS: Record<string, string> = {
 };
 
 export interface HomeCourse {
+  /**
+   * Si el curso se puede vender ahora: tiene fecha de inicio y no paso.
+   * Sin esto la tarjeta sale a color y puede ir de primera aunque diga
+   * «Por confirmar».
+   */
+  activo: boolean;
   id: string;
   slug: string;
   title: string;
@@ -229,8 +235,10 @@ function mapSanityCourse(course: SanityCourse): HomeCourse {
   // vuelve a «Por confirmar» hasta que le carguen la proxima. Las paginas
   // revalidan cada 60 s, asi que el cambio ocurre solo.
   const vencido = cursoYaComenzo(course.startsAt);
+  const activo = Boolean(course.startsAt) && !vencido;
 
   return {
+    activo,
     id: course._id,
     slug: course.slug,
     title: course.title,
@@ -243,7 +251,9 @@ function mapSanityCourse(course: SanityCourse): HomeCourse {
     price: course.price ?? 0,
     priceOnline: course.priceOnline ?? 0,
     currency: course.currency ?? "USD",
-    featured: course.featured ?? false,
+    // Un curso «Por confirmar» no puede ir destacado: encabezaba la lista
+    // sin tener nada que vender.
+    featured: activo && (course.featured ?? false),
     startsAt: vencido ? undefined : course.startsAt,
     imageGradient:
       CATEGORY_GRADIENTS[course.category] ??
@@ -354,7 +364,16 @@ function mapSanityCoursePage(course: SanityCourse): CoursePageData {
 
 export async function getAllCoursesForHome(): Promise<HomeCourse[]> {
   const courses = await client.fetch<SanityCourse[]>(ALL_COURSES_QUERY);
-  return courses.map(mapSanityCourse);
+
+  // El orden de la consulta pone los destacados primero mirando el campo
+  // crudo de Sanity, que no sabe si la fecha ya paso. Se reordena aqui, ya
+  // resuelto que esta vigente: primero lo destacado y vendible, luego el
+  // resto de lo vendible, y al final lo que esta «Por confirmar».
+  const rango = (c: HomeCourse) => (c.activo ? (c.featured ? 0 : 1) : 2);
+
+  return courses
+    .map(mapSanityCourse)
+    .sort((a, b) => rango(a) - rango(b));
 }
 
 export async function getInstructorsForHome(): Promise<HomeInstructor[]> {
